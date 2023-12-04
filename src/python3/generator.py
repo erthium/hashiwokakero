@@ -1,9 +1,10 @@
 from node import Node
 from random import randint, choice
+from grid_visualizer import draw_grid
 
 """
 Generator Algorithm
-
+-------------------
 islands = []
 choose a random node and add to islands
 for _ in range(step_per_cycle):
@@ -14,10 +15,8 @@ for _ in range(step_per_cycle):
     establish the bridge
 print the grid
 get input from user
-y -> continue another cycle
-x -> exit
-
-
+Y -> continue another cycle
+n -> exit
 """
 
 def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
@@ -57,10 +56,16 @@ def get_random_bridge_length(grid: list[list[Node]], x: int, y: int, direction: 
     assert direction >= 0 and direction < 4
     dir_vector = direction_to_vector(direction)
     max_length = 1
+    check_x = x + dir_vector[0] * (max_length + 2)
+    check_y = y + dir_vector[1] * (max_length + 2)
     while True:
-        if grid[x + dir_vector[0] * (max_length + 1)][y + dir_vector[1] * (max_length + 1)] == 0:
-            max_length += 1
-        else: break
+        if check_x < 0 or check_x >= len(grid) or check_y < 0 or check_y >= len(grid[0]):
+            break
+        if grid[check_x][check_y].n_type != 0:
+            break
+        max_length += 1
+        check_x += dir_vector[0]
+        check_y += dir_vector[1]
     return randint(1, max_length)
 
 
@@ -94,7 +99,7 @@ def generate(w, h):
             last_node.make_island(thickness)
             islands.append(last_node)
             current_node.i_count += thickness
-        show_grid(grid)
+        draw_grid(grid)
         if is_dead_end or input("Continue? (Y/n): ").lower() == 'n':
             break
     return grid
@@ -108,7 +113,7 @@ def show_grid(grid: list[list[Node]]):
 
 
 def main():
-    grid = generate(10, 10)
+    grid = generate(20, 20)
 
 
 if __name__ == "__main__":
