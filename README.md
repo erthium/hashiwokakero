@@ -1,6 +1,6 @@
 # Hashiwokakero Puzzle
 
-Generator and solver algorithm repertoire for the Japanese logic puzzle Hashiwokakero created by Nikoli.
+Generator and solver algorithm repertoire for the Japanese logic puzzle Hashiwokakero - aka Hashi - created by Nikoli.
 
 ## Puzzle
 
@@ -16,6 +16,9 @@ The bridges must follow certain criteria:
 - Bridges are only established orthogonally, never diagonally.
 - At most two bridges connect a pair of islands.
 - An island must hold bridges that mathces it's own number.
+
+<img src="https://github.com/ErtyumPX/hashiwokakero/assets/49292808/d4093342-5ae5-43e2-8fda-da4ad8901cec" width="250" height="250" title="Unsolved Hashi">
+<img src="https://github.com/ErtyumPX/hashiwokakero/assets/49292808/3e6096df-abb5-4f02-a41e-70d7056f9337" width="250" height="250 title="Solved Hashi">
 
 Plot-twist is that there may not be only 1 solution. Sometimes the structure of the board allows to have 2 different ways to go and still fulfill all the rules.
 
