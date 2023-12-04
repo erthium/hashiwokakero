@@ -1,0 +1,115 @@
+from node import Node
+from random import randint, choice
+
+"""
+Generator Algorithm
+
+islands = []
+choose a random node and add to islands
+for _ in range(step_per_cycle):
+    get a random node from islands
+    get a random possible direction 
+    get a random bridge thickness (1, 2)
+    get a random bridge length
+    establish the bridge
+print the grid
+get input from user
+y -> continue another cycle
+x -> exit
+
+
+"""
+
+def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
+    """0->left, 1->up, 2->right, 3->down, -1->no possible direction"""
+    assert grid[x][y].n_type == 1
+    assert x >= 0 and x < len(grid)
+    assert y >= 0 and y < len(grid[0])
+    possible_directions = []
+    if x > 1 and grid[x-1][y].n_type == 0 and grid[x-2][y].n_type == 0:
+        possible_directions.append(0)
+    if y > 1 and grid[x][y-1].n_type == 0 and grid[x][y-2].n_type == 0:
+        possible_directions.append(1)
+    if x < len(grid)-2 and grid[x+1][y].n_type == 0 and grid[x+2][y].n_type == 0:
+        possible_directions.append(2)
+    if y < len(grid[0])-2 and grid[x][y+1].n_type == 0 and grid[x][y+2].n_type == 0:
+        possible_directions.append(3)
+    if len(possible_directions) == 0: return -1
+    return choice(possible_directions)
+
+
+def get_random_bridge_thickness(grid: list[list[Node]], x: int, y: int) -> int:
+    assert grid[x][y].n_type == 1
+    assert x >= 0 and x < len(grid)
+    assert y >= 0 and y < len(grid[0])
+    if  8 - grid[x][y].i_count > 1:
+        return choice([1, 2])
+    return 1
+
+def direction_to_vector(direction: int) -> tuple[int, int]:
+    assert direction >= 0 and direction < 4
+    return [(-1, 0), (0, -1), (1, 0), (0, 1)][direction]
+
+def get_random_bridge_length(grid: list[list[Node]], x: int, y: int, direction: int) -> int:
+    assert grid[x][y].n_type == 1
+    assert x >= 0 and x < len(grid)
+    assert y >= 0 and y < len(grid[0])
+    assert direction >= 0 and direction < 4
+    dir_vector = direction_to_vector(direction)
+    max_length = 1
+    while True:
+        if grid[x + dir_vector[0] * (max_length + 1)][y + dir_vector[1] * (max_length + 1)] == 0:
+            max_length += 1
+        else: break
+    return randint(1, max_length)
+
+
+step_per_cycle = 100
+def generate(w, h):
+    grid = [[Node(i, j) for j in range(h)] for i in range(w)]
+    islands = []
+    islands.append(grid[randint(0, w-1)][randint(0, h-1)])
+    islands[0].make_island(0)
+    is_dead_end = False
+    while True:
+
+        for _ in range(step_per_cycle):
+            if len(islands) == 0:
+                is_dead_end = True
+                break
+            current_node = choice(islands)
+            direction = get_random_direction(grid, current_node.x, current_node.y)
+            if direction == -1: # no possible direction
+                islands.remove(current_node)
+                continue
+            thickness = get_random_bridge_thickness(grid, current_node.x, current_node.y)
+            length = get_random_bridge_length(grid, current_node.x, current_node.y, direction)
+            dir_vector = direction_to_vector(direction)
+            x = current_node.x
+            y = current_node.y
+            last_node = grid[x + dir_vector[0] * (length + 1)][y + dir_vector[1] * (length + 1)]
+            print(f'Node {x}x{y} - dir: {direction} - thck: {thickness} - len: {length}')
+            for i in range(length):
+                grid[x + dir_vector[0] * (i + 1)][y + dir_vector[1] * (i + 1)].make_bridge(thickness, direction % 2)
+            last_node.make_island(thickness)
+            islands.append(last_node)
+            current_node.i_count += thickness
+        show_grid(grid)
+        if is_dead_end or input("Continue? (Y/n): ").lower() == 'n':
+            break
+    return grid
+
+
+def show_grid(grid: list[list[Node]]):
+    for line in grid:
+        for node in line:
+            print(node.n_type, end="  ")
+        print('\n')
+
+
+def main():
+    grid = generate(10, 10)
+
+
+if __name__ == "__main__":
+    main()
