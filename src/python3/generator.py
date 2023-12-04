@@ -93,15 +93,15 @@ def generate(w, h):
             x = current_node.x
             y = current_node.y
             last_node = grid[x + dir_vector[0] * (length + 1)][y + dir_vector[1] * (length + 1)]
-            print(f'Node {x}x{y} - dir: {direction} - thck: {thickness} - len: {length}')
+            #print(f'Node {x}x{y} - dir: {direction} - thck: {thickness} - len: {length}')
             for i in range(length):
                 grid[x + dir_vector[0] * (i + 1)][y + dir_vector[1] * (i + 1)].make_bridge(thickness, direction % 2)
             last_node.make_island(thickness)
             islands.append(last_node)
             current_node.i_count += thickness
         draw_grid(grid)
-        if is_dead_end or input("Continue? (Y/n): ").lower() == 'n':
-            break
+        #if is_dead_end or input("Continue? (Y/n): ").lower() == 'n':
+        break
     return grid
 
 
@@ -111,10 +111,36 @@ def show_grid(grid: list[list[Node]]):
             print(node.n_type, end="  ")
         print('\n')
 
+def check_if_grid_full(grid: list[list[Node]]) -> bool:
+    w = len(grid)
+    h = len(grid[0])
+    if [grid[i][0].n_type for i in range(w)].count(0) == w:
+        return False
+    if [grid[i][h-1].n_type for i in range(w)].count(0) == w:
+        return False
+    if [grid[0][i].n_type for i in range(h)].count(0) == h:
+        return False
+    if [grid[w-1][i].n_type for i in range(h)].count(0) == h:
+        return False
+    return True
 
+import os
 def main():
-    grid = generate(20, 20)
-
+    generated_puzzles = 0
+    while generated_puzzles < 1000:
+        grid = generate(20, 20)
+        if not check_if_grid_full(grid): 
+            print("Grid is not full, generating another one...")
+            continue
+        empty_grid: list[list[int]] = []
+        for line in grid:
+            for node in line:
+                if node.n_type == 1: empty_grid.append(node.i_count)
+                else: empty_grid.append(0)
+        current_puzzle_count = len(os.listdir('general_puzzles'))
+        with open(f'general_puzzles/hashi_{current_puzzle_count}.csv', 'w') as file:
+            file.write(str(empty_grid))
+        generated_puzzles += 1
 
 if __name__ == "__main__":
     main()
