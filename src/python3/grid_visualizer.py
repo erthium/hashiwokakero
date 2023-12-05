@@ -34,9 +34,20 @@ def draw_grid(grid: list[list[Node]]) -> None:
         pygame.display.update()
 
 
-
 def main():
-    pass
+    import sys, os
+    cl_args = sys.argv[1:]
+    if len(cl_args) != 1:
+        print("Usage: python3 grid_visualizer.py <path_to_grid_file>")
+        return
+    path = cl_args[0]
+    if not os.path.isfile(path) or not path.endswith(".csv"):
+        print("ERROR: File does not exist")
+        return
+    grid = []
+    with open(path, 'r') as file:
+        pass
+    
 
 if __name__ == "__main__":
     main()
