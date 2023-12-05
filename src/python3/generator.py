@@ -1,6 +1,7 @@
 from node import Node
 from random import randint, choice
 from grid_visualizer import draw_grid
+import os
 
 """
 Generator Algorithm
@@ -17,6 +18,31 @@ print the grid
 get input from user
 Y -> continue another cycle
 n -> exit
+"""
+
+"""
+Saving Puzzles
+--------------
+
+inside general_puzzles/puzzle.{i}.csv:
+
+width;;height;;empty_grid;;solution_grid
+
+w;;h;;000010502007....0050;;0012513106133610....0125120
+
+empty_grid: 
+    0 -> empty
+    any other positive integer -> island
+
+solution_grid: 
+    0 -> empty
+    positive integers -> island
+    negative integers -> bridge
+        -1 -> horizontal single
+        -2 -> horizontal double
+        -3 -> vertical single
+        -4 -> vertical double
+
 """
 
 def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
@@ -99,7 +125,7 @@ def generate(w, h):
             last_node.make_island(thickness)
             islands.append(last_node)
             current_node.i_count += thickness
-        draw_grid(grid)
+        #draw_grid(grid)
         #if is_dead_end or input("Continue? (Y/n): ").lower() == 'n':
         break
     return grid
@@ -124,23 +150,97 @@ def check_if_grid_full(grid: list[list[Node]]) -> bool:
         return False
     return True
 
-import os
+def save_grid(grid: list[list[Node]], path: str = None) -> bool:
+    if not check_if_grid_full(grid): 
+        print("Grid is not full, generating another one...")
+        return False
+    if path is None:
+        path = f"general_puzzles/puzzle_{len(os.listdir('general_puzzles'))}.csv"
+    empty_grid: str = ""
+    solution_grid: str = ""
+    for line in grid:
+        for node in line:
+            if node.n_type == 1: 
+                empty_grid += str(node.i_count)
+                solution_grid += str(node.i_count)
+            elif node.n_type == 0:
+                empty_grid += '0'
+                solution_grid += '0'
+            else:
+                empty_grid += '0'
+                bridge_code = (node.b_thickness * -1) + (-2 * (node.b_dir))
+                solution_grid += str(bridge_code)
+
+    with open(path, 'w') as file:
+        file.write(f"{len(grid)};;{len(grid[0])};;")
+        file.write(f"{empty_grid};;")
+        file.write(f"{solution_grid}\n")
+    return True
+
+def import_solution_grid(path: str) -> list[list[Node]]:
+    if not os.path.isfile(path) or not path.endswith(".csv"):
+        print("ERROR: File does not exist")
+        return
+    grid: list[list[Node]] = []
+    w = None
+    h = None
+    solution_grid = None
+    with open(path, 'r') as file:
+        w, h, _, solution_grid = file.readline().split(";;")
+        w = int(w)
+        h = int(h)
+        solution_grid = list(map(int, solution_grid))
+    for i in range(w):
+        grid.append([])
+        for j in range(h):
+            cursor = i * h + j
+            grid[i].append(Node(i, j))
+            if solution_grid[cursor] > 0:
+                grid[i][j].make_island(solution_grid[cursor])
+            elif solution_grid[cursor] < 0:
+                bridge_info = [(1, 0), (2, 0), (1, 1), (2, 1)][(solution_grid[cursor] * -1) - 1]
+                grid[i][j].make_bridge(*bridge_info)
+    return grid
+
+def import_empty_grid(path: str) -> list[list[Node]]:
+    if not os.path.isfile(path) or not path.endswith(".csv"):
+        print("ERROR: File does not exist")
+        return
+    grid: list[list[Node]] = []
+    w = None
+    h = None
+    solution_grid = None
+    with open(path, 'r') as file:
+        w, h, empty_grid, _ = file.readline().split(";;")
+        w = int(w)
+        h = int(h)
+        empty_grid = list(map(int, empty_grid))
+    for i in range(w):
+        grid.append([])
+        for j in range(h):
+            cursor = i * h + j
+            grid[i].append(Node(i, j))
+            if solution_grid[cursor] > 0:
+                grid[i][j].make_island(solution_grid[cursor])
+    return grid
+
+"""
+bridge thickness: 1-2
+bridge dire: 1->vertical, 2->horizontal
+
+negative integers -> bridge
+    -1 -> horizontal single
+    -2 -> horizontal double
+    -3 -> vertical single
+    -4 -> vertical double
+"""
+
 def main():
-    generated_puzzles = 0
-    while generated_puzzles < 1000:
-        grid = generate(20, 20)
-        if not check_if_grid_full(grid): 
-            print("Grid is not full, generating another one...")
-            continue
-        empty_grid: list[list[int]] = []
-        for line in grid:
-            for node in line:
-                if node.n_type == 1: empty_grid.append(node.i_count)
-                else: empty_grid.append(0)
-        current_puzzle_count = len(os.listdir('general_puzzles'))
-        with open(f'general_puzzles/hashi_{current_puzzle_count}.csv', 'w') as file:
-            file.write(str(empty_grid))
-        generated_puzzles += 1
+    generated = False
+    while not generated:
+        grid = generate(10, 10)
+        generated = save_grid(grid)
+        if generated: draw_grid(grid)
 
 if __name__ == "__main__":
     main()
