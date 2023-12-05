@@ -1,7 +1,7 @@
 import pygame
 from ui_elements import Button, ProcessElements
 from node import Node
-
+from export import import_empty_grid, import_solution_grid
 
 def draw_grid(grid: list[list[Node]]) -> None:
     pygame.init()
@@ -20,7 +20,7 @@ def draw_grid(grid: list[list[Node]]) -> None:
             button_text = ""
             if grid[i][j].n_type == 0: pass
             elif grid[i][j].n_type == 1: button_text = str(grid[i][j].i_count)
-            else: button_text = "|" * grid[i][j].b_thickness if grid[i][j].b_dir == 1 else "-" * grid[i][j].b_thickness
+            else: button_text = ("|" if grid[i][j].b_dir == 1 else "-") * grid[i][j].b_thickness 
             
             new_button = Button(root, i * cell_size[0], j * cell_size[1], cell_size[0], cell_size[1], text=button_text,font_size=24)
             all_buttons.append(new_button)
@@ -36,19 +36,17 @@ def draw_grid(grid: list[list[Node]]) -> None:
 
 def main():
     import sys, os
-    cl_args = sys.argv[1:]
-    if len(cl_args) != 1:
+    if len(sys.argv) != 2:
         print("Usage: python3 grid_visualizer.py <path_to_grid_file>")
         return
-    path = cl_args[0]
-    if not os.path.isfile(path) or not path.endswith(".csv"):
+    path = sys.argv[1]
+    if not os.path.isfile(path):
         print("ERROR: File does not exist")
         return
-    grid = []
-    with open(path, 'r') as file:
-        pass
+    grid = import_empty_grid(path)
+    draw_grid(grid)
+        
     
 
 if __name__ == "__main__":
     main()
-

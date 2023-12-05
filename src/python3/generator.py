@@ -1,6 +1,7 @@
 from node import Node
 from random import randint, choice
-from grid_visualizer import draw_grid
+from visualiser import draw_grid
+from export import save_grid
 import os
 
 """
@@ -24,7 +25,7 @@ n -> exit
 Saving Puzzles
 --------------
 
-inside general_puzzles/puzzle.{i}.csv:
+inside puzzles/puzzle.{i}.csv:
 
 width;;height;;empty_grid;;solution_grid
 
@@ -137,92 +138,6 @@ def show_grid(grid: list[list[Node]]):
             print(node.n_type, end="  ")
         print('\n')
 
-def check_if_grid_full(grid: list[list[Node]]) -> bool:
-    w = len(grid)
-    h = len(grid[0])
-    if [grid[i][0].n_type for i in range(w)].count(0) == w:
-        return False
-    if [grid[i][h-1].n_type for i in range(w)].count(0) == w:
-        return False
-    if [grid[0][i].n_type for i in range(h)].count(0) == h:
-        return False
-    if [grid[w-1][i].n_type for i in range(h)].count(0) == h:
-        return False
-    return True
-
-def save_grid(grid: list[list[Node]], path: str = None) -> bool:
-    if not check_if_grid_full(grid): 
-        print("Grid is not full, generating another one...")
-        return False
-    if path is None:
-        path = f"general_puzzles/puzzle_{len(os.listdir('general_puzzles'))}.csv"
-    empty_grid: str = ""
-    solution_grid: str = ""
-    for line in grid:
-        for node in line:
-            if node.n_type == 1: 
-                empty_grid += str(node.i_count)
-                solution_grid += str(node.i_count)
-            elif node.n_type == 0:
-                empty_grid += '0'
-                solution_grid += '0'
-            else:
-                empty_grid += '0'
-                bridge_code = (node.b_thickness * -1) + (-2 * (node.b_dir))
-                solution_grid += str(bridge_code)
-
-    with open(path, 'w') as file:
-        file.write(f"{len(grid)};;{len(grid[0])};;")
-        file.write(f"{empty_grid};;")
-        file.write(f"{solution_grid}\n")
-    return True
-
-def import_solution_grid(path: str) -> list[list[Node]]:
-    if not os.path.isfile(path) or not path.endswith(".csv"):
-        print("ERROR: File does not exist")
-        return
-    grid: list[list[Node]] = []
-    w = None
-    h = None
-    solution_grid = None
-    with open(path, 'r') as file:
-        w, h, _, solution_grid = file.readline().split(";;")
-        w = int(w)
-        h = int(h)
-        solution_grid = list(map(int, solution_grid))
-    for i in range(w):
-        grid.append([])
-        for j in range(h):
-            cursor = i * h + j
-            grid[i].append(Node(i, j))
-            if solution_grid[cursor] > 0:
-                grid[i][j].make_island(solution_grid[cursor])
-            elif solution_grid[cursor] < 0:
-                bridge_info = [(1, 0), (2, 0), (1, 1), (2, 1)][(solution_grid[cursor] * -1) - 1]
-                grid[i][j].make_bridge(*bridge_info)
-    return grid
-
-def import_empty_grid(path: str) -> list[list[Node]]:
-    if not os.path.isfile(path) or not path.endswith(".csv"):
-        print("ERROR: File does not exist")
-        return
-    grid: list[list[Node]] = []
-    w = None
-    h = None
-    solution_grid = None
-    with open(path, 'r') as file:
-        w, h, empty_grid, _ = file.readline().split(";;")
-        w = int(w)
-        h = int(h)
-        empty_grid = list(map(int, empty_grid))
-    for i in range(w):
-        grid.append([])
-        for j in range(h):
-            cursor = i * h + j
-            grid[i].append(Node(i, j))
-            if solution_grid[cursor] > 0:
-                grid[i][j].make_island(solution_grid[cursor])
-    return grid
 
 """
 bridge thickness: 1-2
