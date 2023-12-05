@@ -7,7 +7,7 @@ class Node:
         self.i_count: int = -1     # island count 1-8
 
         self.b_thickness: int = -1    # bridge thickness
-        self.b_dir: int = -1       # 1->vertical, 2->horizontal
+        self.b_dir: int = -1       #  0->horizontal, 1->vertical
 
     def make_island(self, i_count: int) -> None:
         self.n_type = 1
