@@ -227,7 +227,7 @@ class InteractablePhase(Enum):
 
 class Button(InterfaceElement):
 	def __init__(self, root_surface, x: int = 0, y: int = 0, width: int = 100, height: int = 25, 
-			  	click_fuction: callable=EMPTY_FUNCTION, args: tuple = tuple(), kwargs: dict = {}, 
+			  	click_function: callable=EMPTY_FUNCTION, args: tuple = tuple(), kwargs: dict = {}, 
 				text="Button", font_size=11,
 				background: tuple = (190,190,190), foreground: tuple = (0,0,0),
 				border_color: tuple = (0,0,0), border_width: int = 4,
@@ -254,7 +254,7 @@ class Button(InterfaceElement):
 		self.pressed_args: tuple = pressed_args
 		self.pressed_kwargs: dict = pressed_kwargs
 
-		self.click_function: callable = click_fuction
+		self.click_function: callable = click_function
 		self.args: tuple = args
 		self.kwargs: dict = kwargs
 
@@ -263,13 +263,11 @@ class Button(InterfaceElement):
 		self.text:Text = Text(root_surface, self.rect.centerx, self.rect.centery, text, 
 							font_size, foreground, Alignment.CENTER)
 
-	def hover_event(self):
-		print("Hovered!")
+	def hover(self):
 		self.phase = InteractablePhase.HOVER
 		self.hover_event(*self.hover_args, **self.hover_kwargs)
 	
-	def pressed_event(self):
-		print("Pressed!")
+	def press(self):
 		self.phase = InteractablePhase.PRESSED
 		self.pressed_event(*self.pressed_args, **self.pressed_kwargs)
 
@@ -430,7 +428,7 @@ def ProcessElements(events, pressed_keys, mouse_pos, elements:list = [], inputs:
 	for element_ in elements:
 		if ElementCollide(element_, mouse_pos):
 			if element_.phase != InteractablePhase.PRESSED:
-				element_.hover_event()
+				element_.hover()
 		else:
 			element_.phase = InteractablePhase.DEFAULT
 	
@@ -438,12 +436,11 @@ def ProcessElements(events, pressed_keys, mouse_pos, elements:list = [], inputs:
 		if event.type == pygame.MOUSEBUTTONDOWN:
 			for element_ in elements:
 				if element_.phase == InteractablePhase.HOVER and element_.status == InterfaceStatus.VISIBLE:
-					element_.pressed_event()
+					element_.press()
 
 		elif event.type == pygame.MOUSEBUTTONUP:
 			for element_ in elements:
 				if element_.phase == InteractablePhase.PRESSED and element_.status == InterfaceStatus.VISIBLE:
-					print("PRESSED!")
 					element_.click()
 			for input_box in inputs:
 				if ElementCollide(input_box, mouse_pos):
