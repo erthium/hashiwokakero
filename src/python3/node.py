@@ -2,12 +2,12 @@ class Node:
     def __init__(self, x, y):
         self.x: int = x
         self.y: int = y
-        self.n_type: int = 0       # 0->empty, 1->island, 2->bridge
+        self.n_type: int = 0          # 0->empty, 1->island, 2->bridge
 
-        self.i_count: int = -1     # island count 1-8
+        self.i_count: int = -1        # island count 1-8
 
-        self.b_thickness: int = -1    # bridge thickness
-        self.b_dir: int = -1       #  0->horizontal, 1->vertical
+        self.b_thickness: int = -1    # bridge thickness 1-2
+        self.b_dir: int = -1          # 0->horizontal, 1->vertical
 
     def make_island(self, i_count: int) -> None:
         self.n_type = 1

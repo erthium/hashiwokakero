@@ -139,23 +139,13 @@ def show_grid(grid: list[list[Node]]):
         print('\n')
 
 
-"""
-bridge thickness: 1-2
-bridge dire: 1->vertical, 2->horizontal
-
-negative integers -> bridge
-    -1 -> horizontal single
-    -2 -> horizontal double
-    -3 -> vertical single
-    -4 -> vertical double
-"""
-
 def main():
     generated = False
     while not generated:
         grid = generate(10, 10)
         generated = save_grid(grid)
-        if generated: draw_grid(grid)
+        if generated:
+            draw_grid(grid)
 
 if __name__ == "__main__":
     main()
