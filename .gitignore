@@ -199,3 +199,4 @@ cython_debug/
 ## Other
 src/local
 src/python3/puzzles
+src/cpp/bin

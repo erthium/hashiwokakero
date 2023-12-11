@@ -50,6 +50,10 @@ def draw_grid(grid: list[list[Node]]) -> None:
         pygame.display.update()
 
 
+def visualise_solver(grid: list[list[Node]]) -> None:
+    pass
+
+
 def main():
     import sys, os
     if len(sys.argv) != 3:

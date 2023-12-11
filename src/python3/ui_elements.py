@@ -16,11 +16,13 @@ import pygame
 from pygame import Surface
 from pygame.rect import Rect
 from enum import Enum
-import re
 from time import time as get_time
+import re, os
+
+ABS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 EMPTY_FUNCTION = lambda: 0
-DEFAULT_FONT_PATH = 'data/SpaceMono-Regular.ttf'
+DEFAULT_FONT_PATH = ABS_DIR + '/data/SpaceMono-Regular.ttf'
 VALID_INPUT_CHARACTERS = r"[^a-zA-Z0-9., &%+-=^$'\"()\[\]{}*?!@#_/\\|:;<>~`]"
 INPUTBOX_TEXT_SIDE_MARGIN = 5
 INPUTBOX_HOVERING_CURSOR = pygame.SYSTEM_CURSOR_IBEAM
