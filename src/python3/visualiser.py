@@ -46,7 +46,7 @@ def draw_grid(grid: list[list[Node]]) -> None:
         root.fill((255, 255, 255))
         ProcessElements(ALL_EVENTS, PRESSED, MOUSE_POS, all_buttons)
         for button in all_buttons:
-            button.render()
+            button.render()        
         pygame.display.update()
 
 
@@ -54,25 +54,31 @@ def visualise_solver(grid: list[list[Node]]) -> None:
     pass
 
 
-def main():
+def parse_args() -> list[list[Node]]:
     import sys, os
     if len(sys.argv) != 3:
-        print("Usage: python3 grid_visualizer.py <-e||-s> <path_to_grid_file>")
-        return
+        print("Usage: python3 visualiser.py <-e||-s> <path_to_grid_file>")
+        return -1
     path = sys.argv[2]
     if not os.path.isfile(path):
         print("ERROR: File does not exist")
-        return
+        return -1
     if sys.argv[1] == "-e":
         grid = import_empty_grid(path)
     elif sys.argv[1] == "-s":
         grid = import_solution_grid(path)
     else:
-        print("Usage: python3 grid_visualizer.py <-e||-s> <path_to_grid_file>")
+        print("Usage: python3 visualiser.py <-e||-s> <path_to_grid_file>")
+        return -1
+    return grid
+
+
+def main():
+    grid = parse_args()
+    if grid == -1:
         return
     draw_grid(grid)
-        
-    
+
 
 if __name__ == "__main__":
     main()
