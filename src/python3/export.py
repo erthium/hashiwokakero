@@ -5,6 +5,7 @@ import os
 ABS_DIR: str = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_FONT_PATH: str = ABS_DIR + '/data/SpaceMono-Regular.ttf'
 
+
 def save_grid(grid: list[list[Node]], path: str = None) -> bool:
     if path is None:
         path = f"puzzles/puzzle_{len(os.listdir('puzzles'))}.csv"
@@ -107,8 +108,7 @@ def direction_to_vector(direction: int) -> tuple[int, int]:
 
 def grid_to_surface(root: pygame.Surface, grid: list[list[Node]], cell_unit: int) -> None:
     """
-    Draws the grid to the surface.
-    Does not return anything.
+    Draws the background grid, bridges and islands to the passed surface.
     """
     pygame.init()
     font: pygame.font.Font = pygame.font.Font(DEFAULT_FONT_PATH, int(cell_unit / 2))
@@ -168,7 +168,6 @@ def grid_to_surface(root: pygame.Surface, grid: list[list[Node]], cell_unit: int
                     pygame.draw.line(root, (0, 0, 0), (start_pos[0] + cell_unit / 15, start_pos[1]), (end_pos[0] + cell_unit // 15, end_pos[1]), line_thickness)
                     pygame.draw.line(root, (0, 0, 0), (start_pos[0] - cell_unit / 15, start_pos[1]), (end_pos[0] - cell_unit // 15, end_pos[1]), line_thickness)
 
-    
     # draw the islands
     for island in all_islands:
         position = (cell_unit // 2 + island.x * cell_unit, cell_unit // 2 + island.y * cell_unit)
@@ -179,10 +178,11 @@ def grid_to_surface(root: pygame.Surface, grid: list[list[Node]], cell_unit: int
         root.blit(text_surface, (position[0] - text_size[0] / 2, position[1] - text_size[1] / 2))
 
 
-def output_image(grid: list[list[Node]], path: str, cell_unit: int = 200,) -> bool:
+def output_image(grid: list[list[Node]], path: str, cell_unit: int = 200) -> bool:
     """
     Takes grid, cell size of every node in pixels and path 
     for output; and outputs an image of the grid.\n
+    Total image pixel width or height cannot be larger than 20_000.\n
     Supports BMP, TGA, PNG and JPEG format.\n
     Higher cell size leads to better resolution in output image.\n
     Better to have cell_unit as an even number.\n
@@ -190,9 +190,16 @@ def output_image(grid: list[list[Node]], path: str, cell_unit: int = 200,) -> bo
     """
     root_width = len(grid) * cell_unit
     root_height = len(grid[0]) * cell_unit
+    if root_width > 20_000 or root_height > 20_000:
+        print("ERROR: Image size cannot be larger than 20_000 pixels.")
+        return False
     root = pygame.Surface((root_width , root_height))
-    grid_to_surface(root, grid, cell_unit)
-    pygame.image.save(root, path)
+    try:
+        grid_to_surface(root, grid, cell_unit)
+        pygame.image.save(root, path)
+    except Exception as e:
+        print(f"ERROR: {e}")
+        return False
     return True
 
 
@@ -219,7 +226,7 @@ def main():
     grid = parse_args()
     if grid == -1:
         return
-    output_image(grid, "images/test.png")
+    output_image(grid, "images/test.png", 300)
 
 
 if __name__ == "__main__":
