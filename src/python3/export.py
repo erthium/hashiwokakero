@@ -1,23 +1,9 @@
 from node import Node
 import os
 
-def check_if_grid_full(grid: list[list[Node]]) -> bool:
-    w = len(grid)
-    h = len(grid[0])
-    if [grid[i][0].n_type for i in range(w)].count(0) == w:
-        return False
-    if [grid[i][h-1].n_type for i in range(w)].count(0) == w:
-        return False
-    if [grid[0][i].n_type for i in range(h)].count(0) == h:
-        return False
-    if [grid[w-1][i].n_type for i in range(h)].count(0) == h:
-        return False
-    return True
+
 
 def save_grid(grid: list[list[Node]], path: str = None) -> bool:
-    if not check_if_grid_full(grid): 
-        print("Grid is not full, generating another one...")
-        return False
     if path is None:
         path = f"puzzles/puzzle_{len(os.listdir('puzzles'))}.csv"
     empty_grid: str = ""
@@ -64,15 +50,12 @@ def import_solution_grid(path: str) -> list[list[Node]]:
             i += 1
         else: solution_grid.append(int(temp_sol[i]))
         i += 1
-    print(temp_sol)
-    print(solution_grid)
     for i in range(w):
         grid.append([])
         for j in range(h):
             cursor = i * h + j
             grid[i].append(Node(i, j))
             current_node_code = solution_grid[cursor]
-            print(current_node_code)
             if current_node_code > 0:
                 grid[i][j].make_island(current_node_code)
             #bridge_info = [(1, 0), (2, 0), (1, 1), (2, 1)][(solution_grid[cursor] * -1) - 1]

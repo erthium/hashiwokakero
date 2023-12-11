@@ -1,9 +1,3 @@
-from node import Node
-from random import randint, choice
-from visualiser import draw_grid
-from export import save_grid
-import os
-
 """
 Generator Algorithm
 -------------------
@@ -43,8 +37,27 @@ solution_grid:
         -2 -> horizontal double
         -3 -> vertical single
         -4 -> vertical double
+"""
 
 """
+Terminology
+-----------
+
+Full Grid: A grid that satisfies given w and h dimensions and has no empty edges.
+
+Cycle Step: Iteration count of the generator algorithm. Since generation is random, 
+it may not reach that iteration count. Still is important if the user wants to stop 
+generating at some point
+
+Max Puzzle: A puzzle which cannot be extended anymore, which has no node that could 
+potentially have another bridge in an empty direction.
+"""
+
+from node import Node
+from random import randint, choice
+from visualiser import draw_grid
+from export import save_grid
+
 
 def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
     """0->left, 1->up, 2->right, 3->down, -1->no possible direction"""
@@ -62,7 +75,6 @@ def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
         possible_directions.append(3)
     if len(possible_directions) == 0: return -1
     return choice(possible_directions)
-
 
 def get_random_bridge_thickness(grid: list[list[Node]], x: int, y: int) -> int:
     assert grid[x][y].n_type == 1
@@ -95,9 +107,14 @@ def get_random_bridge_length(grid: list[list[Node]], x: int, y: int, direction: 
         check_y += dir_vector[1]
     return randint(1, max_length)
 
-
 step_per_cycle = 100
-def generate(w, h):
+def generate(w: int, h: int) -> list[list[Node]]:
+    """
+    Generates a puzzle with given w and h dimensions.
+    Returns a 2D list of nodes.
+    Output may not be full, meaning one edge line of the grid may be empty.
+    Use generate_till_full() to generate a surely full grid.
+    """
     grid = [[Node(i, j) for j in range(h)] for i in range(w)]
     islands = []
     islands.append(grid[randint(0, w-1)][randint(0, h-1)])
@@ -132,6 +149,33 @@ def generate(w, h):
     return grid
 
 
+def check_if_grid_full(grid: list[list[Node]]) -> bool:
+    w = len(grid)
+    h = len(grid[0])
+    if [grid[i][0].n_type for i in range(w)].count(0) == w:
+        return False
+    if [grid[i][h-1].n_type for i in range(w)].count(0) == w:
+        return False
+    if [grid[0][i].n_type for i in range(h)].count(0) == h:
+        return False
+    if [grid[w-1][i].n_type for i in range(h)].count(0) == h:
+        return False
+    return True
+
+
+def generate_till_full(w: int, h: int) -> list[list[Node]]:
+    """
+    Keeps generating a puzzle until it is full.
+    Returns a 2D list of nodes.
+    """
+    grid: list[list[Node]] = None
+    while True:
+        grid = generate(w, h)
+        if check_if_grid_full(grid):
+            break
+    return grid
+
+
 def show_grid(grid: list[list[Node]]):
     for line in grid:
         for node in line:
@@ -140,12 +184,8 @@ def show_grid(grid: list[list[Node]]):
 
 
 def main():
-    generated = False
-    while not generated:
-        grid = generate(10, 10)
-        generated = save_grid(grid)
-        if generated:
-            draw_grid(grid)
+    grid = generate_till_full(10, 10)
+    draw_grid(grid)
 
 if __name__ == "__main__":
     main()
