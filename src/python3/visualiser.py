@@ -1,17 +1,10 @@
 import pygame
 from ui_elements import Button, ProcessElements
 from node import Node
-from export import import_empty_grid, import_solution_grid
+from export import import_empty_grid, import_solution_grid, grid_to_surface
 
-def print_node_data(node: Node) -> None:
-    print(f"Node at ({node.x}, {node.y})")
-    print(f"Type: {node.n_type}")
-    print(f"Island count: {node.i_count}")
-    print(f"Bridge thickness: {node.b_thickness}")
-    print(f"Bridge direction: {node.b_dir}", end="\n\n")
-
-
-def draw_grid(grid: list[list[Node]]) -> None:
+""" --DEPRECATED--
+def draw_grid_old(grid: list[list[Node]]) -> None:
     pygame.init()
 
     grid_width = len(grid)
@@ -48,11 +41,36 @@ def draw_grid(grid: list[list[Node]]) -> None:
         for button in all_buttons:
             button.render()        
         pygame.display.update()
+"""
 
 
-def visualise_solver(grid: list[list[Node]]) -> None:
-    pass
+def print_node_data(node: Node) -> None:
+    print(f"Node at ({node.x}, {node.y})")
+    print(f"Type: {node.n_type}")
+    print(f"Island count: {node.i_count}")
+    print(f"Bridge thickness: {node.b_thickness}")
+    print(f"Bridge direction: {node.b_dir}", end="\n\n")
 
+
+def draw_grid(grid: list[list[Node]]) -> None:
+    pygame.init()
+    grid_width = len(grid)
+    grid_height = len(grid[0])
+    ratio = grid_width / grid_height
+    if ratio > 1:
+        window_size = (800, int(800 / ratio))
+    else:
+        window_size = (int(800 * ratio), 800)
+    cell_size = window_size[0] // grid_width
+    root = pygame.display.set_mode(window_size)
+    pygame.display.set_caption("Hashiwokakero Grid Visualizer")
+    loop = True
+    grid_to_surface(root, grid, cell_size)
+    while loop:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                loop = False
+        pygame.display.update()
 
 def parse_args() -> list[list[Node]]:
     import sys, os
