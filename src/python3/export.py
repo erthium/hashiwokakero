@@ -125,10 +125,10 @@ def grid_to_surface(root: pygame.Surface, grid: list[list[Node]], cell_unit: int
     # draw the grid
     root.fill((255, 255, 255))
     cursor = int(cell_unit / 2), int(cell_unit / 2)
-    for i in range(grid_width):
-        pygame.draw.line(root, (220, 220, 220), (0, cursor[1] + i * cell_unit), (root_size[1], cursor[1] + i * cell_unit), line_thickness // 2)
-    for j in range(grid_height):
-        pygame.draw.line(root, (220, 220, 220), (cursor[0] + j * cell_unit, 0), (cursor[0] + j * cell_unit, root_size[0]), line_thickness // 2)
+    for j in range(grid_width):
+        pygame.draw.line(root, (220, 220, 220), (cursor[0] + j * cell_unit, 0), (cursor[0] + j * cell_unit, root_size[1]), line_thickness // 2)
+    for i in range(grid_height):
+        pygame.draw.line(root, (220, 220, 220), (0, cursor[1] + i * cell_unit), (root_size[0], cursor[1] + i * cell_unit), line_thickness // 2)
 
     #draw the bridges
     drawn_bridges = []
