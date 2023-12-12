@@ -72,6 +72,7 @@ def draw_grid(grid: list[list[Node]]) -> None:
                 loop = False
         pygame.display.update()
 
+
 def parse_args() -> list[list[Node]]:
     import sys, os
     if len(sys.argv) != 3:
