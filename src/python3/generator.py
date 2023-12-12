@@ -121,7 +121,6 @@ def generate(w: int, h: int) -> list[list[Node]]:
     islands[0].make_island(0)
     is_dead_end = False
     while True:
-
         for _ in range(step_per_cycle):
             if len(islands) == 0:
                 is_dead_end = True
@@ -137,6 +136,18 @@ def generate(w: int, h: int) -> list[list[Node]]:
             x = current_node.x
             y = current_node.y
             last_node = grid[x + dir_vector[0] * (length + 1)][y + dir_vector[1] * (length + 1)]
+            # check if selected node has direct ortogonal island neighbour
+            adjacent_island_found = False
+            for dir in [0, 1]:
+                vector = direction_to_vector(dir)
+                if last_node.x + vector[0] >= 0 and last_node.x + vector[0] < len(grid) and last_node.y + vector[1] >= 0 and last_node.y + vector[1] < len(grid[0]):
+                    if grid[last_node.x + vector[0]][last_node.y + vector[1]].n_type == 1:
+                        adjacent_island_found = True
+                if last_node.x - vector[0] >= 0 and last_node.x - vector[0] < len(grid) and last_node.y - vector[1] >= 0 and last_node.y - vector[1] < len(grid[0]):
+                    if grid[last_node.x - vector[0]][last_node.y - vector[1]].n_type == 1:
+                        adjacent_island_found = True
+            if adjacent_island_found:
+                continue
             #print(f'Node {x}x{y} - dir: {direction} - thck: {thickness} - len: {length}')
             for i in range(length):
                 grid[x + dir_vector[0] * (i + 1)][y + dir_vector[1] * (i + 1)].make_bridge(thickness, direction % 2)
@@ -183,8 +194,9 @@ def show_grid(grid: list[list[Node]]):
         print('\n')
 
 
+
 def main():
-    grid = generate_till_full(10, 10)
+    grid = generate_till_full(15, 10)
     draw_grid(grid)
 
 if __name__ == "__main__":
