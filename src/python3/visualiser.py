@@ -65,13 +65,13 @@ def draw_grid(grid: list[list[Node]]) -> None:
     root = pygame.display.set_mode(window_size)
     pygame.display.set_caption("Hashiwokakero Grid Visualizer")
     loop = True
-    grid_to_surface(root, grid, cell_size)
     while loop:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 loop = False
+        grid_to_surface(root, grid, cell_size)
         pygame.display.update()
-
+    pygame.quit()
 
 def parse_args() -> list[list[Node]]:
     import sys, os
