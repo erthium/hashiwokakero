@@ -165,8 +165,13 @@ def grid_to_surface(root: pygame.Surface, grid: list[list[Node]], cell_unit: int
                     pygame.draw.line(root, (0, 0, 0), start_pos, end_pos, line_thickness)
                 else:
                     opposite_direction = (bridge_direction + 1)
-                    pygame.draw.line(root, (0, 0, 0), (start_pos[0] + cell_unit / 15, start_pos[1]), (end_pos[0] + cell_unit // 15, end_pos[1]), line_thickness)
-                    pygame.draw.line(root, (0, 0, 0), (start_pos[0] - cell_unit / 15, start_pos[1]), (end_pos[0] - cell_unit // 15, end_pos[1]), line_thickness)
+                    if opposite_direction % 2 == 0:
+                        pygame.draw.line(root, (0, 0, 0), (start_pos[0] + cell_unit / 15, start_pos[1]), (end_pos[0] + cell_unit // 15, end_pos[1]), line_thickness)
+                        pygame.draw.line(root, (0, 0, 0), (start_pos[0] - cell_unit / 15, start_pos[1]), (end_pos[0] - cell_unit // 15, end_pos[1]), line_thickness)
+                    else:
+                        pygame.draw.line(root, (0, 0, 0), (start_pos[0], start_pos[1] + cell_unit / 15), (end_pos[0], end_pos[1] + cell_unit // 15), line_thickness)
+                        pygame.draw.line(root, (0, 0, 0), (start_pos[0], start_pos[1] - cell_unit / 15), (end_pos[0], end_pos[1] - cell_unit // 15), line_thickness)
+
 
     # draw the islands
     for island in all_islands:
