@@ -1,4 +1,3 @@
-from node import Node
 """
 Solver Algorithm
 ----------------
@@ -27,83 +26,135 @@ if open_islands is empty -> puzzle is solvable
 else -> puzzle is unsolvable
 """
 
+from time import sleep
+from node import Node
+from visualiser import draw_grid
+from export import import_empty_grid, import_solution_grid
+
 def direction_to_vector(direction: int) -> tuple[int, int]:
     assert direction >= 0 and direction < 4
     return [(-1, 0), (0, -1), (1, 0), (0, 1)][direction]
 
-def get_bridge_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
+
+def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
     """
-    {0->left, 1->up, 2->right, 3->down, -1->current bridge input count}
+    {0->left, 1->up, 2->right, 3->down}
     """
     assert grid[x][y].n_type == 1
     assert x >= 0 and x < len(grid)
     assert y >= 0 and y < len(grid[0])
-    output = {-1: 0, 0: 0, 1: 0, 2: 0, 3: 0}
+    output = {0: 0, 1: 0, 2: 0, 3: 0}
+    is_c_one = grid[x][y].needed == 1
     # first, calculate the input count
     for direction in [0, 1, 2, 3]:
         following_input_bridge = False
         dir_vector = direction_to_vector(direction)
         check_x = x + dir_vector[0]
         check_y = y + dir_vector[1]
-        if grid[check_x][check_y].n_type == 2:
-            if grid[check_x][check_y].b_dir % 2 == direction:
-                output[-1] += grid[check_x][check_y].b_thickness
-        while check_x >= 0 and check_x < len(grid) and check_y >= 0 and check_y < len(grid[0]):
+        found_target = False
+        while check_x >= 0 and check_x < len(grid) and check_y >= 0 and check_y < len(grid[0]) and not found_target:
             hit_node = grid[check_x][check_y]
             if hit_node.n_type == 0:
                 check_x += dir_vector[0]
                 check_y += dir_vector[1]
             elif hit_node.n_type == 1:
                 # Find the max possible input to the hit node
-                hit_node_max_input = 0
-                for hit_dir in [0, 1, 2, 3]:
-                    hit_side = direction_to_vector(hit_dir)
-                    if grid[check_x + hit_side[0]][check_y + hit_side[1]].n_type == 0:
-                        hit_node_max_input += 1
-                output[direction] = hit_node_max_input
-                break
+                if following_input_bridge:
+                        output[direction] = 1 if hit_node.needed >= 1 else 0
+                else:
+                    if is_c_one:
+                        output[direction] = 1 if hit_node.needed >= 1 else 0
+                    else:
+                        output[direction] = 2 if hit_node.needed >= 2 else hit_node.needed
+                found_target = True
             elif hit_node.n_type == 2:
                 if grid[check_x][check_y].b_dir % 2 == direction:
                     if grid[check_x][check_y].b_thickness == 1:
                         following_input_bridge = True
+                        check_x += dir_vector[0]
+                        check_y += dir_vector[1]
+                    else:
+                        output[direction] = 0
+                        found_target = True
+                else:
+                    output[direction] = 0
+                    found_target = True
+    return output
 
 def establish_bridge(grid: list[list[Node]], x: int, y: int, direction: int, thickness: int) -> None:
     assert grid[x][y].n_type == 1
     assert x >= 0 and x < len(grid)
     assert y >= 0 and y < len(grid[0])
+    # increase the current_in of both nodes by thickness
+    # make the nodes in between bridges
+    grid[x][y].current_in += thickness
+    dir_vector = direction_to_vector(direction)
+    check_x = x + dir_vector[0]
+    check_y = y + dir_vector[1]
+    while grid[check_x][check_y].n_type != 1:
+        grid[check_x][check_y].make_bridge(thickness, direction % 2)
+        check_x += dir_vector[0]
+        check_y += dir_vector[1]
+    grid[check_x][check_y].current_in += thickness
+    print(f"Established bridge of thickness {thickness} in direction {direction} from ({x}, {y}) to ({check_x}, {check_y})")
+
 
 def solve(grid: list[list[Node]]) -> bool:
+    """
+    Get an empty grid and applies essential principles to solve it.\n
+    Return True if solvable, False if unsolvable.\n
+    If grid is half-solved, nodes need to be marked with 
+    current out and bridges need to be marked as bridges.
+    """
     # get all open islands
-    open_islands = []
+    open_islands: list[Node] = []
     for i in range(len(grid)):
         for j in range(len(grid[0])):
             if grid[i][j].n_type == 1:
                 open_islands.append(grid[i][j])
     
-    any_operation_done = True
+    any_operation_done: bool = True
     while any_operation_done: # if no operation was done, puzzle is unsolvable
         any_operation_done = False
         for island in open_islands: # check every open island each cycle
+            # if island is already closed, skip
+            # occurs when an island send a bridge to this one, and not closed it
+            if island.needed == 0:
+                open_islands.remove(island)
+                continue
+
             # get current node info
-            direction_info = get_bridge_info(grid, island.x, island.y)
+            print(f"Island at ({island.x}, {island.y})")
+            direction_info: dict[int, int] = bridge_out_info(grid, island.x, island.y)
             max_out = sum(direction_info.values())
-            current_input = direction_info[-1]
-            bridges_needed = island.i_count - current_input
+            dir = 0
+            for thickness in direction_info.values():
+                if thickness != 0:
+                    dir += 1
+            print(f"Dirs: {direction_info}")
+            print(f"Max out: {max_out}")
             # main part of the algorithm
-            if bridges_needed == max_out:
+            ## if needed == max_out, build all bridges
+            if island.needed == max_out:
                 for direction, thickness in direction_info.items():
-                    establish_bridge(grid, island.x, island.y, direction, thickness)
+                    if thickness != 0:
+                        establish_bridge(grid, island.x, island.y, direction, thickness)
                 open_islands.remove(island)
                 any_operation_done = True
 
-            elif len(direction_info.keys()) == 1:
-                establish_bridge(grid, island.x, island.y, direction_info.keys()[0], direction_info.values()[0])
-                open_islands.remove(island)
-                any_operation_done = True
+            ## if only one direction is possible, build bridge
+            elif dir == 1:
+                for direction, thickness in direction_info.items():
+                    if thickness != 0:
+                        establish_bridge(grid, island.x, island.y, direction, thickness)
+                        open_islands.remove(island)
+                        any_operation_done = True
 
-            elif bridges_needed // 2 == len(direction_info.keys()) - 1 and bridges_needed % 2 == 1:
-                for direction, _ in direction_info.items():
-                    establish_bridge(grid, island.x, island.y, direction, 1)
+            ## if island has to send at least 1 bridge in all directions...
+            elif island.needed // 2 == dir - 1 and island.needed % 2 == 1:
+                for direction, thickness in direction_info.items():
+                    if thickness != 0:
+                        establish_bridge(grid, island.x, island.y, direction, 1)
                 any_operation_done = True
 
     return len(open_islands) == 0
@@ -111,7 +162,13 @@ def solve(grid: list[list[Node]]) -> bool:
 
 
 def main():
-    pass
+    path = "puzzles/puzzle_8.csv"
+    grid_to_solve = import_empty_grid(path)
+    is_solvable = solve(grid_to_solve)
+    print(is_solvable)
+    draw_grid(grid_to_solve)
+    #solution_grid = import_solution_grid(path)
+
 
 
 
