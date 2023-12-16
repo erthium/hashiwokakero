@@ -42,8 +42,3 @@ Will be written soon...
 
 Will be written soon...
 
-
-func solve_hashi(board)
-    Node[] islands = every Node in board that has type=1
-    ...will be worked on soon
-
