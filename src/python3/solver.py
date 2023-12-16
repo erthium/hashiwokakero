@@ -187,7 +187,7 @@ def solve(grid: list[list[Node]]) -> bool:
 
 
 def main():
-    path = "puzzles/puzzle_4.csv"
+    path = "puzzles/puzzle_3.csv"
     grid_to_solve = import_empty_grid(path)
     open_islands = solve(grid_to_solve)
     for island in open_islands:

@@ -196,12 +196,9 @@ def show_grid(grid: list[list[Node]]):
 
 
 def main():
-    for _ in range(10):
-        w = choice([10, 15, 20, 25])
-        h = choice([10, 15, 20, 25])
-        grid = generate_till_full(w, h)
-        draw_grid(grid)
-        save_grid(grid)
+    grid = generate_till_full(10, 10)
+    draw_grid(grid)
+    save_grid(grid, "puzzles/test.csv")
         
 
 if __name__ == "__main__":

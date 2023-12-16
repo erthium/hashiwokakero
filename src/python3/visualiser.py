@@ -47,9 +47,15 @@ def draw_grid_old(grid: list[list[Node]]) -> None:
 def print_node_data(node: Node) -> None:
     print(f"Node at ({node.x}, {node.y})")
     print(f"Type: {node.n_type}")
+    print("-------------------------")
     print(f"Island count: {node.i_count}")
+    print(f"Island current_in: {node.current_in}")
+    print(f"Island needed: {node.needed}")
+    print("-------------------------")
     print(f"Bridge thickness: {node.b_thickness}")
-    print(f"Bridge direction: {node.b_dir}", end="\n\n")
+    print(f"Bridge direction: {node.b_dir}")
+    print("-------------------------\n")
+
 
 
 def draw_grid(grid: list[list[Node]]) -> None:
@@ -71,6 +77,14 @@ def draw_grid(grid: list[list[Node]]) -> None:
                 loop = False
         grid_to_surface(root, grid, cell_size)
         pygame.display.update()
+        """
+        user_input = input("Enter node coordinates (x y): ")
+        if user_input == "" or user_input == " " or user_input == "q":
+            loop = False
+        node = list(map(int ,user_input.split()))
+        if len(node) == 2:
+            print_node_data(grid[node[0]][node[1]])
+        """
     pygame.quit()
 
 def parse_args() -> list[list[Node]]:
