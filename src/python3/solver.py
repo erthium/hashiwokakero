@@ -26,6 +26,14 @@ if open_islands is empty -> puzzle is solvable
 else -> puzzle is unsolvable
 """
 
+"""
+TODO: Add rules for islands with 1 or 2, where they cannot 
+consider sending all bridges to an identical island
+TODO: Create an algorithm for brute-force solving, to be used
+after solving with the base rules and remaining a situation
+which may contain multiple solutions
+"""
+
 from time import sleep
 from node import Node
 from visualiser import draw_grid, print_node_data
@@ -178,9 +186,8 @@ def solve(grid: list[list[Node]]) -> bool:
     return open_islands
 
 
-
 def main():
-    path = "puzzles/puzzle_3.csv"
+    path = "puzzles/puzzle_4.csv"
     grid_to_solve = import_empty_grid(path)
     open_islands = solve(grid_to_solve)
     for island in open_islands:
