@@ -70,7 +70,7 @@ def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
                             output[direction] = 2 if hit_node.needed >= 2 else hit_node.needed
                 found_target = True
             elif hit_node.n_type == 2:
-                if grid[check_x][check_y].b_dir % 2 == direction:
+                if grid[check_x][check_y].b_dir == direction % 2:
                     if grid[check_x][check_y].b_thickness == 1:
                         following_input_bridge = True
                         check_x += dir_vector[0]
@@ -94,7 +94,7 @@ def establish_bridge(grid: list[list[Node]], x: int, y: int, direction: int, thi
     check_y = y + dir_vector[1]
     while grid[check_x][check_y].n_type != 1:
         if grid[check_x][check_y].n_type == 2:
-            assert grid[check_x][check_y].b_dir % 2 == direction
+            assert grid[check_x][check_y].b_dir == direction % 2
             assert grid[check_x][check_y].b_thickness == 1
             assert grid[check_x][check_y].b_thickness + thickness == 2
             grid[check_x][check_y].b_thickness += thickness
@@ -125,8 +125,8 @@ def solve(grid: list[list[Node]]) -> bool:
         any_operation_done = False
         for i in range(len(open_islands) - 1, 0, -1): # check every open island each cycle
             island  = open_islands[i]
-            print_node_data(island)
-            draw_grid(grid)
+            #print_node_data(island)
+            #draw_grid(grid)
             # if island is already closed, skip
             # occurs when an island send a bridge to this one, and not closed it
             if island.needed == 0:
@@ -139,8 +139,8 @@ def solve(grid: list[list[Node]]) -> bool:
             dir = len(list(direction_info.keys()))
             
             #print(f"Island at ({island.x}, {island.y})")
-            print(f"Dirs: {direction_info}")
-            print(f"Max out: {max_out}")
+            #print(f"Dirs: {direction_info}")
+            #print(f"Max out: {max_out}")
             
             # main part of the algorithm
             ## if needed == max_out, build all bridges
@@ -180,7 +180,7 @@ def solve(grid: list[list[Node]]) -> bool:
 
 
 def main():
-    path = "puzzles/puzzle_2.csv"
+    path = "puzzles/puzzle_3.csv"
     grid_to_solve = import_empty_grid(path)
     open_islands = solve(grid_to_solve)
     for island in open_islands:
