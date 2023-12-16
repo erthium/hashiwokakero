@@ -2,6 +2,14 @@
 
 Generator and solver algorithm repertoire for the Japanese logic puzzle Hashiwokakero - aka Hashi - created by Nikoli.
 
+## License
+
+This project is licensed under the [GNU-3.0](https://github.com/ErtyumPX/hashiwokakero/blob/main/LICENSE) license.
+
+## Setup
+
+Will be written soon...
+
 ## Puzzle
 
 Simplyfied rules from [Wikipedia](https://en.wikipedia.org/wiki/Hashiwokakero).
@@ -17,35 +25,22 @@ The bridges must follow certain criteria:
 - At most two bridges connect a pair of islands.
 - An island must hold bridges that mathces it's own number.
 
+Plot-twist is that there may not be only 1 solution. Sometimes the structure of the board allows to have 2 different ways to go and still fulfill all the rules.
+
 <img src="https://github.com/ErtyumPX/hashiwokakero/assets/49292808/d4093342-5ae5-43e2-8fda-da4ad8901cec" width="250" height="250" title="Unsolved Hashi">
 <img src="https://github.com/ErtyumPX/hashiwokakero/assets/49292808/3e6096df-abb5-4f02-a41e-70d7056f9337" width="250" height="250 title="Solved Hashi">
 
-Plot-twist is that there may not be only 1 solution. Sometimes the structure of the board allows to have 2 different ways to go and still fulfill all the rules.
-
 ## General Structure
 
-Node: A class that holds basic values for board cells
-
-class Node
-    int type = 0->empty, 1->island, 2->bridge
-    int bridge_count -> 1, 2 (only if type=2)
-
-Board: A 2 dimensional array for Nodes
-
+Will be written soon...
 
 ## Generator Algorithm
 
-...will be worked on soon
-
+Will be written soon...
 
 ## Solver Algorithm
 
-Function that takes 2 dimensional array of Nodes as an input and returns the array filling the gaps, or -1 if it's unsolvable
-
-
-
-Algorithm in psuedocode
-
+Will be written soon...
 
 
 func solve_hashi(board)
