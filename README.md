@@ -4,7 +4,7 @@ Generator and solver algorithm repertoire for the Japanese logic puzzle Hashiwok
 
 ## License
 
-This project is licensed under the [GNU-3.0](https://github.com/ErtyumPX/hashiwokakero/blob/main/LICENSE) license.
+This project is licensed under the [GNU GPL-3.0](https://github.com/ErtyumPX/hashiwokakero/blob/main/LICENSE) license.
 
 ## Setup
 
