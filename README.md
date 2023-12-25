@@ -32,13 +32,22 @@ Plot-twist is that there may not be only 1 solution. Sometimes the structure of 
 
 ## General Structure
 
+### Terminology
+
+Full Grid: A grid that satisfies given w and h dimensions and has no empty edges.
+
+Cycle Step: Iteration count of the generator algorithm. Since generation is random, 
+it may not reach that iteration count. Still is important if the user wants to stop 
+generating at some point
+
+Max Puzzle: A puzzle which cannot be extended anymore, which has no node that could 
+potentially have another bridge in an empty direction.
+
+### Generator Algorithm
+
 Will be written soon...
 
-## Generator Algorithm
-
-Will be written soon...
-
-## Solver Algorithm
+### Solver Algorithm
 
 Will be written soon...
 
