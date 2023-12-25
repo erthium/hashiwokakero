@@ -2,13 +2,21 @@
 
 Generator and solver algorithm repertoire for the Japanese logic puzzle Hashiwokakero - aka Hashi - created by Nikoli.
 
+The project is still being worked on, check [issues](https://github.com/ErtyumPX/hashiwokakero/issues) and [milestones](https://github.com/ErtyumPX/hashiwokakero/milestones) for the process.
+
 ## License
 
 This project is licensed under the [GNU GPL-3.0](https://github.com/ErtyumPX/hashiwokakero/blob/main/LICENSE) license.
 
 ## Setup
 
-Will be written soon...
+The project is written in Python 3.11.6, although should work on any Python Interpreten above 3.5.x.
+
+Apart from built-in packages, only third party package is PyGame 2.4.0 with SDL 2.28.5.
+
+Easy and mass puzzle generation scrips are currently being worked on, see [ISSUE#3](https://github.com/ErtyumPX/hashiwokakero/issues/3).
+
+You can easily clone or fork the project, see below to find how to use source scripts.
 
 ## Puzzle
 
