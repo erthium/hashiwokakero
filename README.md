@@ -10,7 +10,7 @@ This project is licensed under the [GNU GPL-3.0](https://github.com/ErtyumPX/has
 
 ## Setup
 
-The project is written in Python 3.11.6, although should work on any Python Interpreten above 3.5.x.
+The project is written in Python 3.11.6, although should work on any Python Interpreter above 3.5.x.
 
 Apart from built-in packages, only third party package is PyGame 2.4.0 with SDL 2.28.5.
 
