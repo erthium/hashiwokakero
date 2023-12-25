@@ -197,7 +197,5 @@ cython_debug/
 
 
 ## Other
-src/local
-src/python3/puzzles
-src/python3/pdfs
-src/cpp/bin
+python3/puzzles
+python3/pdfs
