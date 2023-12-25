@@ -7,34 +7,47 @@ DEFAULT_FONT_PATH: str = ABS_DIR + '/data/SpaceMono-Regular.ttf'
 
 
 def save_grid(grid: list[list[Node]], path: str = None) -> bool:
-    if path is None:
-        path = f"puzzles/puzzle_{len(os.listdir('puzzles'))}.csv"
-    empty_grid: str = ""
-    solution_grid: str = ""
-    for line in grid:
-        for node in line:
-            if node.n_type == 1: 
-                empty_grid += str(node.i_count)
-                solution_grid += str(node.i_count)
-            elif node.n_type == 0:
-                empty_grid += '0'
-                solution_grid += '0'
-            else:
-                empty_grid += '0'
-                if node.b_dir == 0:
-                    bridge_code = -1 if node.b_thickness == 1 else -2
-                elif node.b_dir == 1:
-                    bridge_code = -3 if node.b_thickness == 1 else -4
-                solution_grid += str(bridge_code)
+    """
+    Takes a 2D grid of nodes and saves it to a csv file.\n
+    If no path was given, saves it to puzzles/puzzle_{number_of_puzzles}.csv\n
+    Returns True if successful, False otherwise.
+    """
+    try:
+        if path is None:
+            path = f"puzzles/puzzle_{len(os.listdir('puzzles'))}.csv"
+        empty_grid: str = ""
+        solution_grid: str = ""
+        for line in grid:
+            for node in line:
+                if node.n_type == 1: 
+                    empty_grid += str(node.i_count)
+                    solution_grid += str(node.i_count)
+                elif node.n_type == 0:
+                    empty_grid += '0'
+                    solution_grid += '0'
+                else:
+                    empty_grid += '0'
+                    if node.b_dir == 0:
+                        bridge_code = -1 if node.b_thickness == 1 else -2
+                    elif node.b_dir == 1:
+                        bridge_code = -3 if node.b_thickness == 1 else -4
+                    solution_grid += str(bridge_code)
 
-    with open(path, 'w') as file:
-        file.write(f"{len(grid)};;{len(grid[0])};;")
-        file.write(f"{empty_grid};;")
-        file.write(f"{solution_grid}\n")
-    return True
+        with open(path, 'w') as file:
+            file.write(f"{len(grid)};;{len(grid[0])};;")
+            file.write(f"{empty_grid};;")
+            file.write(f"{solution_grid}\n")
+        return True
+    except Exception as e:
+        print(f"ERROR: {e}")
+        return False
 
 
 def import_solution_grid(path: str) -> list[list[Node]]:
+    """
+    Takes a path to a csv file.\n
+    Returns a 2D list of nodes, the solution grid with bridges and islands.
+    """
     if not os.path.isfile(path) or not path.endswith(".csv"):
         print("ERROR: File does not exist.")
         return None
@@ -79,6 +92,10 @@ def import_solution_grid(path: str) -> list[list[Node]]:
 
 
 def import_empty_grid(path: str) -> list[list[Node]]:
+    """
+    Takes a path to a csv file.\n
+    Returns a 2D list of nodes, the empty grid without bridges and only islands.
+    """
     if not os.path.isfile(path) or not path.endswith(".csv"):
         print("ERROR: File does not exist")
         return

@@ -45,6 +45,9 @@ from export import import_empty_grid, import_solution_grid, grid_to_surface
 
 
 def print_node_data(node: Node) -> None:
+    """
+    Debug necessary function, to check if drawn output is correct.
+    """
     print(f"Node at ({node.x}, {node.y})")
     print(f"Type: {node.n_type}")
     print("-------------------------")
@@ -58,6 +61,9 @@ def print_node_data(node: Node) -> None:
 
 
 def draw_grid(grid: list[list[Node]]) -> None:
+    """
+    Takes a 2D list of nodes and draws it on the screen with Pygame.
+    """
     pygame.init()
     grid_width = len(grid)
     grid_height = len(grid[0])

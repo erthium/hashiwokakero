@@ -1,6 +1,5 @@
-"""
-Solver Algorithm
-----------------
+""" --Solver Algorithm--
+
 get open_islands into an array
 any_operation_done = True
 while any_operation_done:
@@ -26,7 +25,7 @@ if open_islands is empty -> puzzle is solvable
 else -> puzzle is unsolvable
 """
 
-"""
+""" --TODO List--
 TODO: Add rules for islands with 1 or 2, where they cannot 
 consider sending all bridges to an identical island
 TODO: Create an algorithm for brute-force solving, to be used
@@ -38,6 +37,7 @@ from time import sleep
 from node import Node
 from visualiser import draw_grid, print_node_data
 from export import import_empty_grid, import_solution_grid
+
 
 def direction_to_vector(direction: int) -> tuple[int, int]:
     assert direction >= 0 and direction < 4

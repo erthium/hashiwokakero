@@ -1,6 +1,5 @@
-"""
-Generator Algorithm
--------------------
+""" --Generator Algorithm--
+
 islands = []
 choose a random node and add to islands
 for _ in range(step_per_cycle):
@@ -15,9 +14,7 @@ Y -> continue another cycle
 n -> exit
 """
 
-"""
-Saving Puzzles
---------------
+""" --Saving Puzzles--
 
 inside puzzles/puzzle.{i}.csv:
 
@@ -39,9 +36,7 @@ solution_grid:
         -4 -> vertical double
 """
 
-"""
-Terminology
------------
+""" -- Terminology--
 
 Full Grid: A grid that satisfies given w and h dimensions and has no empty edges.
 
@@ -60,7 +55,9 @@ from export import save_grid
 
 
 def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
-    """0->left, 1->up, 2->right, 3->down, -1->no possible direction"""
+    """
+    0->left, 1->up, 2->right, 3->down, -1->no possible direction
+    """
     assert grid[x][y].n_type == 1
     assert x >= 0 and x < len(grid)
     assert y >= 0 and y < len(grid[0])
@@ -165,6 +162,9 @@ def generate(w: int, h: int) -> list[list[Node]]:
 
 
 def check_if_grid_full(grid: list[list[Node]]) -> bool:
+    """
+    Checks if grid has empty edges or not
+    """
     w = len(grid)
     h = len(grid[0])
     if [grid[i][0].n_type for i in range(w)].count(0) == w:

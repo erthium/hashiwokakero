@@ -5,6 +5,7 @@ from PIL import Image
 page_size = A5
 page_ratio = page_size[0] / page_size[1]
 
+
 def draw_puzzle(canvas, puzzle_filename, x, y, width, height):
     # Open the puzzle image using Pillow
     image = Image.open(puzzle_filename)
