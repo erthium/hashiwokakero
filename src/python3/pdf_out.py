@@ -42,5 +42,11 @@ def create_pdf(output_filename, puzzle_filenames, rows=2):
 
     pdf.save()
 
-puzzle_filenames = ["images/test.png"]
-create_pdf("output.pdf", puzzle_filenames, rows=1)
+
+def main():
+    puzzle_filenames = ["images/test.png"]
+    create_pdf("output.pdf", puzzle_filenames, rows=1)
+
+
+if __name__ == "__main__":
+    main()

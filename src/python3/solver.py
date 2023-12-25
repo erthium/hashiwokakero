@@ -90,6 +90,7 @@ def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
     #print(f"Output info: {output}")
     return output
 
+
 def establish_bridge(grid: list[list[Node]], x: int, y: int, direction: int, thickness: int) -> None:
     assert grid[x][y].n_type == 1
     assert x >= 0 and x < len(grid)
@@ -194,8 +195,6 @@ def main():
         print_node_data(island)
     draw_grid(grid_to_solve)
     #solution_grid = import_solution_grid(path)
-
-
 
 
 if __name__ == "__main__":

@@ -1,8 +1,3 @@
-import pygame
-from ui_elements import Button, ProcessElements
-from node import Node
-from export import import_empty_grid, import_solution_grid, grid_to_surface
-
 """ --DEPRECATED--
 def draw_grid_old(grid: list[list[Node]]) -> None:
     pygame.init()
@@ -43,6 +38,11 @@ def draw_grid_old(grid: list[list[Node]]) -> None:
         pygame.display.update()
 """
 
+import pygame
+from ui_elements import Button, ProcessElements
+from node import Node
+from export import import_empty_grid, import_solution_grid, grid_to_surface
+
 
 def print_node_data(node: Node) -> None:
     print(f"Node at ({node.x}, {node.y})")
@@ -55,7 +55,6 @@ def print_node_data(node: Node) -> None:
     print(f"Bridge thickness: {node.b_thickness}")
     print(f"Bridge direction: {node.b_dir}")
     print("-------------------------\n")
-
 
 
 def draw_grid(grid: list[list[Node]]) -> None:
@@ -86,6 +85,7 @@ def draw_grid(grid: list[list[Node]]) -> None:
             print_node_data(grid[node[0]][node[1]])
         """
     pygame.quit()
+
 
 def parse_args() -> list[list[Node]]:
     import sys, os

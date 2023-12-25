@@ -76,6 +76,7 @@ def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
     if len(possible_directions) == 0: return -1
     return choice(possible_directions)
 
+
 def get_random_bridge_thickness(grid: list[list[Node]], x: int, y: int) -> int:
     assert grid[x][y].n_type == 1
     assert x >= 0 and x < len(grid)
@@ -84,9 +85,11 @@ def get_random_bridge_thickness(grid: list[list[Node]], x: int, y: int) -> int:
         return choice([1, 2])
     return 1
 
+
 def direction_to_vector(direction: int) -> tuple[int, int]:
     assert direction >= 0 and direction < 4
     return [(-1, 0), (0, -1), (1, 0), (0, 1)][direction]
+
 
 def get_random_bridge_length(grid: list[list[Node]], x: int, y: int, direction: int) -> int:
     assert grid[x][y].n_type == 1
@@ -106,6 +109,7 @@ def get_random_bridge_length(grid: list[list[Node]], x: int, y: int, direction: 
         check_x += dir_vector[0]
         check_y += dir_vector[1]
     return randint(1, max_length)
+
 
 step_per_cycle = 100
 def generate(w: int, h: int) -> list[list[Node]]:
@@ -192,7 +196,6 @@ def show_grid(grid: list[list[Node]]):
         for node in line:
             print(node.n_type, end="  ")
         print('\n')
-
 
 
 def main():
