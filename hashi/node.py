@@ -10,7 +10,7 @@ class Node:
         self.b_dir: int = -1          # 0->horizontal, 1->vertical
 
         # solver necessary property
-        self.current_in = 0
+        self.current_in: int = 0
 
     # solver necessary property
     @property

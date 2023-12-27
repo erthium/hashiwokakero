@@ -5,7 +5,7 @@ Make sure that test puzzle .csv files are in the same directory as this file.
 
 import os
 import sys
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SCRIPT_DIR: str = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../hashi')))
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
@@ -16,8 +16,9 @@ from export import import_empty_grid, import_solution_grid
 from node import Node
 from visualiser import print_node_data
 
-BASIC_PUZZLE_DIR = os.path.join(SCRIPT_DIR, "basic_puzzles")
-DIFFICULT_PUZZLE_DIR = os.path.join(SCRIPT_DIR, "difficult_puzzles")
+BASIC_PUZZLE_DIR: str = os.path.join(SCRIPT_DIR, "basic_puzzles")
+DIFFICULT_PUZZLE_DIR: str = os.path.join(SCRIPT_DIR, "difficult_puzzles")
+
 
 def compare_nodes(node1: Node, node2: Node) -> bool:
     """
@@ -32,6 +33,7 @@ def compare_nodes(node1: Node, node2: Node) -> bool:
     if node1.b_thickness != node2.b_thickness: return False
     if node1.b_dir != node2.b_dir: return False
     return True
+
 
 class Tester(TestCase):
     def solver_test(self, path:str) -> None:
@@ -62,8 +64,8 @@ class Tester(TestCase):
             else: print(f"SOLVER TEST: Failed '{filename}'")
 
 
-def main():
-    solver_tests = Tester()
+def main() -> None:
+    solver_tests: Tester = Tester()
     solver_tests.solver_test(BASIC_PUZZLE_DIR)
     solver_tests.solver_test(DIFFICULT_PUZZLE_DIR)
 

@@ -193,7 +193,7 @@ def solve(grid: list[list[Node]], use_given: bool = True) -> list[list[Node]]:
 
 def main():
     import sys
-    grid_to_solve = parse_args_empty(sys.argv)
+    grid_to_solve: list[list[Node]] = parse_args_empty(sys.argv)
     solve(grid_to_solve)
     draw_grid(grid_to_solve)
     #solution_grid = import_solution_grid(path)
