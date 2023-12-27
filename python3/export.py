@@ -1,4 +1,4 @@
-from node import Node
+from node import Node, direction_to_vector, is_in_grid
 import pygame
 import os
 
@@ -118,11 +118,6 @@ def import_empty_grid(path: str) -> list[list[Node]]:
     return grid
 
 
-def direction_to_vector(direction: int) -> tuple[int, int]:
-    assert direction >= 0 and direction < 4
-    return [(-1, 0), (0, -1), (1, 0), (0, 1)][direction]
-
-
 def grid_to_surface(root: pygame.Surface, grid: list[list[Node]], cell_unit: int) -> None:
     """
     Draws the background grid, bridges and islands to the passed surface.
@@ -163,14 +158,14 @@ def grid_to_surface(root: pygame.Surface, grid: list[list[Node]], cell_unit: int
                 while not (forward_found and backward_found):
                     if not forward_found:
                         forward = [current[0] + vector[0] * index, current[1] + vector[1] * index]
-                        if forward[0] >= 0 and forward[0] < grid_width and forward[1] >= 0 and forward[1] < grid_height:
+                        if is_in_grid(forward[0], forward[1], grid_width, grid_height):
                             nodes_of_bridge.append(forward)
                             if grid[forward[0]][forward[1]].n_type == 1:
                                 forward_found = True
                                 
                     if not backward_found:
                         backward = [current[0] - vector[0] * index, current[1] - vector[1] * index]
-                        if backward[0] >= 0 and backward[0] < grid_width and backward[1] >= 0 and backward[1] < grid_height:
+                        if is_in_grid(backward[0], backward[1], grid_width, grid_height):
                             nodes_of_bridge.insert(0, backward)
                             if grid[backward[0]][backward[1]].n_type == 1:
                                 backward_found = True
@@ -225,27 +220,62 @@ def output_image(grid: list[list[Node]], path: str, cell_unit: int = 200) -> boo
     return True
 
 
-def parse_args() -> list[list[Node]]:
-    import sys, os
-    if len(sys.argv) != 3:
-        print("Usage: python3 visualiser.py <-e||-s> <path_to_grid_file>")
+def parse_args(argv: list[str]) -> list[list[Node]]:
+    """
+    Parse the system arguments and returns the grid, empty or solution according to flags.
+    """
+    import os
+    if len(argv) != 3:
+        print("Usage: python3 ___.py <-e||-s> <path_to_grid_file>")
         return -1
-    path = sys.argv[2]
+    path = argv[2]
     if not os.path.isfile(path):
         print("ERROR: File does not exist")
         return -1
-    if sys.argv[1] == "-e":
+    if argv[1] == "-e":
         grid = import_empty_grid(path)
-    elif sys.argv[1] == "-s":
+    elif argv[1] == "-s":
         grid = import_solution_grid(path)
     else:
-        print("Usage: python3 export.py <-e||-s> <path_to_grid_file>")
+        print("Usage: python3 ___.py <-e||-s> <path_to_grid_file>")
         return -1
     return grid
 
 
+def parse_args_empty(argv: list[str]) -> list[list[Node]]:
+    """
+    Parse the system arguments and returns the empty grid.
+    """
+    import os
+    if len(argv) != 2:
+        print(f"Usage: python3 ___.py <path>")
+        return -1
+    path = argv[1]
+    if not os.path.isfile(path):
+        print("ERROR: File does not exist")
+        return -1
+    grid = import_empty_grid(path)
+    return grid
+
+
+def parse_to_path(argv: list[str]) -> str:
+    """
+    Parse the system arguments and returns the path.
+    """
+    import os
+    if len(argv) != 2:
+        print(f"Usage: python3 ___.py <path>")
+        return -1
+    path = argv[1]
+    if os.path.isfile(path):
+        print(f"ERROR: There is an existing file at '{path}'")
+        return -1
+    return path
+
+
 def main():
-    grid = parse_args()
+    import sys
+    grid = parse_args(sys.argv)
     if grid == -1:
         return
     output_image(grid, "images/test.png", 300)

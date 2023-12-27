@@ -41,7 +41,7 @@ def draw_grid_old(grid: list[list[Node]]) -> None:
 import pygame
 from ui_elements import Button, ProcessElements
 from node import Node
-from export import import_empty_grid, import_solution_grid, grid_to_surface
+from export import import_empty_grid, import_solution_grid, grid_to_surface, parse_args
 
 
 def print_node_data(node: Node) -> None:
@@ -93,27 +93,9 @@ def draw_grid(grid: list[list[Node]]) -> None:
     pygame.quit()
 
 
-def parse_args() -> list[list[Node]]:
-    import sys, os
-    if len(sys.argv) != 3:
-        print("Usage: python3 visualiser.py <-e||-s> <path_to_grid_file>")
-        return -1
-    path = sys.argv[2]
-    if not os.path.isfile(path):
-        print("ERROR: File does not exist")
-        return -1
-    if sys.argv[1] == "-e":
-        grid = import_empty_grid(path)
-    elif sys.argv[1] == "-s":
-        grid = import_solution_grid(path)
-    else:
-        print("Usage: python3 visualiser.py <-e||-s> <path_to_grid_file>")
-        return -1
-    return grid
-
-
 def main():
-    grid = parse_args()
+    import sys
+    grid = parse_args(sys.argv)
     if grid == -1:
         return
     draw_grid(grid)
