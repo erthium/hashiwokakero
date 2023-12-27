@@ -37,6 +37,7 @@ from time import sleep
 from node import Node, direction_to_vector, is_in_grid
 from visualiser import draw_grid, print_node_data
 from export import parse_args_empty
+from copy import deepcopy
 
 
 def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
@@ -115,13 +116,16 @@ def establish_bridge(grid: list[list[Node]], x: int, y: int, direction: int, thi
     #print(f"Established bridge of thickness {thickness} in direction {direction} from ({x}, {y}) to ({check_x}, {check_y})")
 
 
-def solve(grid: list[list[Node]]) -> bool:
+def solve(grid: list[list[Node]], use_given: bool = True) -> list[list[Node]]:
     """
     Get an empty grid and applies essential principles to solve it.\n
+    If use_given is False, deepcopies the grid and solves the copy.\n
     Return True if solvable, False if unsolvable.\n
     If grid is half-solved, nodes need to be marked with 
     current out and bridges need to be marked as bridges.
     """
+    if not use_given: 
+        grid = deepcopy(grid)
     # get all open islands
     open_islands: list[Node] = []
     for i in range(len(grid)):
@@ -184,15 +188,13 @@ def solve(grid: list[list[Node]]) -> bool:
                             if thickness != 1:
                                 establish_bridge(grid, island.x, island.y, direction, 1)
                                 any_operation_done = True
-    return open_islands
+    return grid
 
 
 def main():
     import sys
     grid_to_solve = parse_args_empty(sys.argv)
-    open_islands = solve(grid_to_solve)
-    for island in open_islands:
-        print_node_data(island)
+    solve(grid_to_solve)
     draw_grid(grid_to_solve)
     #solution_grid = import_solution_grid(path)
 

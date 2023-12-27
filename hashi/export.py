@@ -48,9 +48,12 @@ def import_solution_grid(path: str) -> list[list[Node]]:
     Takes a path to a csv file.\n
     Returns a 2D list of nodes, the solution grid with bridges and islands.
     """
-    if not os.path.isfile(path) or not path.endswith(".csv"):
-        print("ERROR: File does not exist.")
-        return None
+    if not os.path.isfile(path):
+        print(f"ERROR: File does not exist in '{path}'")
+        return
+    if not path.endswith(".csv"):
+        print(f"ERROR: File '{path}' is in csv format.")
+        return
     grid: list[list[Node]] = []
     w = None
     h = None
@@ -96,8 +99,11 @@ def import_empty_grid(path: str) -> list[list[Node]]:
     Takes a path to a csv file.\n
     Returns a 2D list of nodes, the empty grid without bridges and only islands.
     """
-    if not os.path.isfile(path) or not path.endswith(".csv"):
-        print("ERROR: File does not exist")
+    if not os.path.isfile(path):
+        print(f"ERROR: File does not exist in '{path}'")
+        return
+    if not path.endswith(".csv"):
+        print(f"ERROR: File '{path}' is in csv format.")
         return
     grid: list[list[Node]] = []
     w = None
