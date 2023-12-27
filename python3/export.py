@@ -221,6 +221,9 @@ def output_image(grid: list[list[Node]], path: str, cell_unit: int = 200) -> boo
 
 
 def parse_args(argv: list[str]) -> list[list[Node]]:
+    """
+    Parse the system arguments and returns the grid, empty or solution according to flags.
+    """
     import os
     if len(argv) != 3:
         print("Usage: python3 ___.py <-e||-s> <path_to_grid_file>")
@@ -241,7 +244,7 @@ def parse_args(argv: list[str]) -> list[list[Node]]:
 
 def parse_args_empty(argv: list[str]) -> list[list[Node]]:
     """
-    Parse the system arguments and returns the path.
+    Parse the system arguments and returns the empty grid.
     """
     import os
     if len(argv) != 2:

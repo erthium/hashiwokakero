@@ -36,7 +36,7 @@ which may contain multiple solutions
 from time import sleep
 from node import Node, direction_to_vector, is_in_grid
 from visualiser import draw_grid, print_node_data
-from export import import_empty_grid, import_solution_grid, parse_args_empty
+from export import parse_args_empty
 
 
 def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
