@@ -22,7 +22,7 @@ DIFFICULT_PUZZLE_DIR = os.path.join(SCRIPT_DIR, "difficult_puzzles")
 def compare_nodes(node1: Node, node2: Node) -> bool:
     """
     Checks all properties of two nodes for equality.\n
-    Does not include solver necessary properties.\n
+    Does NOT include solver necessary properties.\n
     Returns True if all properties are equal, False otherwise. 
     """
     if node1.x != node2.x: return False
@@ -34,7 +34,11 @@ def compare_nodes(node1: Node, node2: Node) -> bool:
     return True
 
 class Tester(TestCase):
-    def solver_test(self, path):
+    def solver_test(self, path:str) -> None:
+        """
+        Goes through all .csv files in the given path and tries to solve them.\n
+        Prints the name of the file and whether it passed or failed.
+        """
         for filename in os.listdir(path):
             if filename.endswith(".csv"):
                 current_path = os.path.join(path, filename)
@@ -43,16 +47,19 @@ class Tester(TestCase):
                 grid_w = len(empty_grid)
                 grid_h = len(empty_grid[0])
                 solved_grid = solve(empty_grid, False)
-                # go through x and y, compare nodes
+                failed = False
                 for x in range(grid_w):
+                    if failed: break
                     for y in range(grid_h):
+                        if failed: break
                         if not compare_nodes(solution_grid[x][y], solved_grid[x][y]):
-                            print(f"Error in {filename} at ({x}, {y})")
-                            print_node_data(solution_grid[x][y])
-                            print_node_data(solved_grid[x][y])
+                            #print(f"Error in {filename} at ({x}, {y})")
+                            failed = True
+                            #print_node_data(solution_grid[x][y])
+                            #print_node_data(solved_grid[x][y])
                             #self.fail()
-            print(f"SOLVER TEST: Passed '{filename}'")
-        
+            if not failed: print(f"SOLVER TEST: Passed '{filename}'")
+            else: print(f"SOLVER TEST: Failed '{filename}'")
 
 
 def main():
