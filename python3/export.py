@@ -267,8 +267,8 @@ def parse_to_path(argv: list[str]) -> str:
         print(f"Usage: python3 ___.py <path>")
         return -1
     path = argv[1]
-    if not os.path.isfile(path):
-        print("ERROR: File does not exist")
+    if os.path.isfile(path):
+        print(f"ERROR: There is an existing file at '{path}'")
         return -1
     return path
 
