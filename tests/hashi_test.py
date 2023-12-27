@@ -1,6 +1,7 @@
 """
 Test file for the core library.\n
-Make sure that test puzzle .csv files are in the same directory as this file.
+Make sure that test puzzle .csv files are in the same directory as this file.\n
+Structure will be changed in the future.
 """
 
 import os
@@ -36,6 +37,9 @@ def compare_nodes(node1: Node, node2: Node) -> bool:
 
 
 class Tester(TestCase):
+    """
+    Class for testing the hashi scripts.
+    """
     def solver_test(self, path:str) -> None:
         """
         Goes through all .csv files in the given path and tries to solve them.\n
