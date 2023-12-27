@@ -65,9 +65,13 @@ def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
             elif hit_node.n_type == 1:
                 # Find the max possible input to the hit node
                 if following_input_bridge and hit_node.needed >= 1:
-                        output[direction] = 1
+                    output[direction] = 1
                 else:
+                    # Impossible bridge rule
                     if is_c_one:
+                        if hit_node.needed >= 1 and hit_node.i_count != 1:
+                            output[direction] = 1
+                    elif grid[x][y].i_count == 2 and hit_node.i_count == 2:
                         if hit_node.needed >= 1:
                             output[direction] = 1
                     else:
