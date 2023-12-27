@@ -48,10 +48,10 @@ Max Puzzle: A puzzle which cannot be extended anymore, which has no node that co
 potentially have another bridge in an empty direction.
 """
 
-from node import Node
+from node import Node, direction_to_vector, is_in_grid
 from random import randint, choice
 from visualiser import draw_grid
-from export import save_grid
+from export import save_grid, parse_to_path
 
 
 def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
@@ -59,8 +59,7 @@ def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
     0->left, 1->up, 2->right, 3->down, -1->no possible direction
     """
     assert grid[x][y].n_type == 1
-    assert x >= 0 and x < len(grid)
-    assert y >= 0 and y < len(grid[0])
+    assert is_in_grid(x, y, len(grid), len(grid[0]))
     possible_directions = []
     if x > 1 and grid[x-1][y].n_type == 0 and grid[x-2][y].n_type == 0:
         possible_directions.append(0)
@@ -83,22 +82,16 @@ def get_random_bridge_thickness(grid: list[list[Node]], x: int, y: int) -> int:
     return 1
 
 
-def direction_to_vector(direction: int) -> tuple[int, int]:
-    assert direction >= 0 and direction < 4
-    return [(-1, 0), (0, -1), (1, 0), (0, 1)][direction]
-
-
 def get_random_bridge_length(grid: list[list[Node]], x: int, y: int, direction: int) -> int:
     assert grid[x][y].n_type == 1
-    assert x >= 0 and x < len(grid)
-    assert y >= 0 and y < len(grid[0])
+    assert is_in_grid(x, y, len(grid), len(grid[0]))
     assert direction >= 0 and direction < 4
     dir_vector = direction_to_vector(direction)
     max_length = 1
     check_x = x + dir_vector[0] * (max_length + 2)
     check_y = y + dir_vector[1] * (max_length + 2)
     while True:
-        if check_x < 0 or check_x >= len(grid) or check_y < 0 or check_y >= len(grid[0]):
+        if not is_in_grid(check_x, check_y, len(grid), len(grid[0])):
             break
         if grid[check_x][check_y].n_type != 0:
             break
@@ -163,7 +156,8 @@ def generate(w: int, h: int) -> list[list[Node]]:
 
 def check_if_grid_full(grid: list[list[Node]]) -> bool:
     """
-    Checks if grid has empty edges or not
+    Checks if grid has empty edges or not.\n
+    Returns True if full, False if not.
     """
     w = len(grid)
     h = len(grid[0])
@@ -199,9 +193,12 @@ def show_grid(grid: list[list[Node]]):
 
 
 def main():
+    import sys
+    path = parse_to_path(sys.argv)
+    if path == -1: return
     grid = generate_till_full(10, 10)
     draw_grid(grid)
-    save_grid(grid, "puzzles/test.csv")
+    save_grid(grid, path)
         
 
 if __name__ == "__main__":

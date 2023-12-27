@@ -34,23 +34,19 @@ which may contain multiple solutions
 """
 
 from time import sleep
-from node import Node
+from node import Node, direction_to_vector, is_in_grid
 from visualiser import draw_grid, print_node_data
-from export import import_empty_grid, import_solution_grid
-
-
-def direction_to_vector(direction: int) -> tuple[int, int]:
-    assert direction >= 0 and direction < 4
-    return [(-1, 0), (0, -1), (1, 0), (0, 1)][direction]
+from export import import_empty_grid, import_solution_grid, parse_args_empty
 
 
 def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
     """
     {0->left, 1->up, 2->right, 3->down}
     """
+    grid_w = len(grid)
+    grid_h = len(grid[0])
     assert grid[x][y].n_type == 1
-    assert x >= 0 and x < len(grid)
-    assert y >= 0 and y < len(grid[0])
+    assert is_in_grid(x, y, grid_w, grid_h)
     output = {}
     is_c_one = grid[x][y].needed == 1
     # first, calculate the input count
@@ -60,7 +56,8 @@ def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
         check_x = x + dir_vector[0]
         check_y = y + dir_vector[1]
         found_target = False
-        while check_x >= 0 and check_x < len(grid) and check_y >= 0 and check_y < len(grid[0]) and not found_target:
+        while is_in_grid(check_x, check_y, grid_w, grid_h):
+            if found_target: break
             hit_node = grid[check_x][check_y]
             if hit_node.n_type == 0:
                 check_x += dir_vector[0]
@@ -93,8 +90,7 @@ def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
 
 def establish_bridge(grid: list[list[Node]], x: int, y: int, direction: int, thickness: int) -> None:
     assert grid[x][y].n_type == 1
-    assert x >= 0 and x < len(grid)
-    assert y >= 0 and y < len(grid[0])
+    assert is_in_grid(x, y, len(grid), len(grid[0]))
     # increase the current_in of both nodes by thickness
     # make the nodes in between bridges
     grid[x][y].current_in += thickness
@@ -188,8 +184,8 @@ def solve(grid: list[list[Node]]) -> bool:
 
 
 def main():
-    path = "puzzles/puzzle_3.csv"
-    grid_to_solve = import_empty_grid(path)
+    import sys
+    grid_to_solve = parse_args_empty(sys.argv)
     open_islands = solve(grid_to_solve)
     for island in open_islands:
         print_node_data(island)

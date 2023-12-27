@@ -25,3 +25,12 @@ class Node:
         self.n_type = 2
         self.b_thickness = b_thickness
         self.b_dir = b_dir
+
+
+def direction_to_vector(direction: int) -> tuple[int, int]:
+    assert direction >= 0 and direction < 4
+    return [(-1, 0), (0, -1), (1, 0), (0, 1)][direction]
+
+
+def is_in_grid(x: int, y: int, grid_w: int, grid_h: int) -> bool:
+    return x >= 0 and x < grid_w and y >= 0 and y < grid_h
