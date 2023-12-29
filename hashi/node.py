@@ -1,3 +1,7 @@
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+
+
 class Node:
     def __init__(self, x, y):
         self.x: int = x

@@ -38,10 +38,10 @@ def draw_grid_old(grid: list[list[Node]]) -> None:
         pygame.display.update()
 """
 
-import pygame
-from ui_elements import Button, ProcessElements
 from node import Node
+from ui_elements import Button, ProcessElements
 from export import import_empty_grid, import_solution_grid, grid_to_surface, parse_args
+import pygame
 
 
 def print_node_data(node: Node) -> None:
