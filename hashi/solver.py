@@ -39,17 +39,32 @@ from visualiser import draw_grid, print_node_data
 from export import parse_args_empty
 from copy import deepcopy
 
+# global variables
+_grid: list[list[Node]] = None
+_open_islands: list[Node] = None
 
-def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
+# global variable removal decorator
+def collect_garbage(func):
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        global _grid, _open_islands
+        _grid = None
+        _open_islands = None
+        return result
+    return wrapper
+
+
+def bridge_out_info(x: int, y: int) -> dict[int, int]:
     """
     {0->left, 1->up, 2->right, 3->down}
     """
-    grid_w = len(grid)
-    grid_h = len(grid[0])
-    assert grid[x][y].n_type == 1
+    global _grid
+    grid_w = len(_grid)
+    grid_h = len(_grid[0])
+    assert _grid[x][y].n_type == 1
     assert is_in_grid(x, y, grid_w, grid_h)
     output = {}
-    is_c_one = grid[x][y].needed == 1
+    is_c_one = _grid[x][y].needed == 1
     # first, calculate the input count
     for direction in [0, 1, 2, 3]:
         following_input_bridge = False
@@ -59,7 +74,7 @@ def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
         found_target = False
         while is_in_grid(check_x, check_y, grid_w, grid_h):
             if found_target: break
-            hit_node = grid[check_x][check_y]
+            hit_node = _grid[check_x][check_y]
             if hit_node.n_type == 0:
                 check_x += dir_vector[0]
                 check_y += dir_vector[1]
@@ -72,7 +87,7 @@ def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
                     if is_c_one:
                         if hit_node.needed >= 1 and hit_node.i_count != 1:
                             output[direction] = 1
-                    elif grid[x][y].i_count == 2 and hit_node.i_count == 2:
+                    elif _grid[x][y].i_count == 2 and hit_node.i_count == 2:
                         if hit_node.needed >= 1:
                             output[direction] = 1
                     else:
@@ -80,8 +95,8 @@ def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
                             output[direction] = 2 if hit_node.needed >= 2 else hit_node.needed
                 found_target = True
             elif hit_node.n_type == 2:
-                if grid[check_x][check_y].b_dir == direction % 2:
-                    if grid[check_x][check_y].b_thickness == 1:
+                if _grid[check_x][check_y].b_dir == direction % 2:
+                    if _grid[check_x][check_y].b_thickness == 1:
                         following_input_bridge = True
                         check_x += dir_vector[0]
                         check_y += dir_vector[1]
@@ -93,61 +108,61 @@ def bridge_out_info(grid: list[list[Node]], x: int, y: int) -> dict[int, int]:
     return output
 
 
-def establish_bridge(grid: list[list[Node]], x: int, y: int, direction: int, thickness: int) -> None:
-    assert grid[x][y].n_type == 1
-    assert is_in_grid(x, y, len(grid), len(grid[0]))
+def establish_bridge(x: int, y: int, direction: int, thickness: int) -> None:
+    global _grid
+    assert _grid[x][y].n_type == 1
+    assert is_in_grid(x, y, len(_grid), len(_grid[0]))
     # increase the current_in of both nodes by thickness
     # make the nodes in between bridges
-    grid[x][y].current_in += thickness
+    _grid[x][y].current_in += thickness
     dir_vector = direction_to_vector(direction)
     check_x = x + dir_vector[0]
     check_y = y + dir_vector[1]
-    while grid[check_x][check_y].n_type != 1:
-        if grid[check_x][check_y].n_type == 2:
-            assert grid[check_x][check_y].b_dir == direction % 2
-            assert grid[check_x][check_y].b_thickness == 1
-            assert grid[check_x][check_y].b_thickness + thickness == 2
-            grid[check_x][check_y].b_thickness += thickness
+    while _grid[check_x][check_y].n_type != 1:
+        if _grid[check_x][check_y].n_type == 2:
+            assert _grid[check_x][check_y].b_dir == direction % 2
+            assert _grid[check_x][check_y].b_thickness == 1
+            assert _grid[check_x][check_y].b_thickness + thickness == 2
+            _grid[check_x][check_y].b_thickness += thickness
         else:
-            grid[check_x][check_y].make_bridge(thickness, direction % 2)
+            _grid[check_x][check_y].make_bridge(thickness, direction % 2)
         check_x += dir_vector[0]
         check_y += dir_vector[1]
-    grid[check_x][check_y].current_in += thickness
+    _grid[check_x][check_y].current_in += thickness
     #print(f"Established bridge of thickness {thickness} in direction {direction} from ({x}, {y}) to ({check_x}, {check_y})")
 
 
-def solve(grid: list[list[Node]], use_given: bool = True) -> list[list[Node]]:
+def solve_by_rules() -> None:
     """
+    Do not use directly, use bruteforce_solve() instead.\n
     Get an empty grid and applies essential principles to solve it.\n
     If use_given is False, deepcopies the grid and solves the copy.\n
     Return True if solvable, False if unsolvable.\n
     If grid is half-solved, nodes need to be marked with 
     current out and bridges need to be marked as bridges.
     """
-    if not use_given: 
-        grid = deepcopy(grid)
+    global _grid, _open_islands
     # get all open islands
-    open_islands: list[Node] = []
-    for i in range(len(grid)):
-        for j in range(len(grid[0])):
-            if grid[i][j].n_type == 1:
-                open_islands.append(grid[i][j])
+    for i in range(len(_grid)):
+        for j in range(len(_grid[0])):
+            if _grid[i][j].n_type == 1:
+                _open_islands.append(_grid[i][j])
     
     any_operation_done: bool = True
     while any_operation_done: # if no operation was done, puzzle is unsolvable
         any_operation_done = False
-        for i in range(len(open_islands) - 1, -1, -1): # check every open island each cycle
-            island  = open_islands[i]
+        for i in range(len(_open_islands) - 1, -1, -1): # check every open island each cycle
+            island  = _open_islands[i]
             #print_node_data(island)
-            #draw_grid(grid)
+            #draw_grid(_grid)
             # if island is already closed, skip
             # occurs when an island send a bridge to this one, and not closed it
             if island.needed == 0:
-                open_islands.pop(i)
+                _open_islands.pop(i)
                 continue
 
             # get current node info
-            direction_info: dict[int, int] = bridge_out_info(grid, island.x, island.y)
+            direction_info: dict[int, int] = bridge_out_info(island.x, island.y)
             max_out = sum(direction_info.values())
             dir = len(list(direction_info.keys()))
             #print(f"Island at ({island.x}, {island.y})")
@@ -158,22 +173,22 @@ def solve(grid: list[list[Node]], use_given: bool = True) -> list[list[Node]]:
             ## if needed == max_out, build all bridges
             if island.needed == max_out:
                 for direction, thickness in direction_info.items():
-                    establish_bridge(grid, island.x, island.y, direction, thickness)
-                open_islands.remove(island)
+                    establish_bridge(island.x, island.y, direction, thickness)
+                _open_islands.remove(island)
                 any_operation_done = True
 
             ## if only one direction is possible, build bridge
             elif dir == 1:
                 for direction, thickness in direction_info.items():
-                    establish_bridge(grid, island.x, island.y, direction, thickness)
-                    open_islands.remove(island)
+                    establish_bridge(island.x, island.y, direction, thickness)
+                    _open_islands.remove(island)
                     any_operation_done = True
 
             ## if island has to send at least 1 bridge in all directions...
             elif island.needed // 2 == dir - 1:
                 if island.needed % 2 == 1:
                     for direction, thickness in direction_info.items():
-                        establish_bridge(grid, island.x, island.y, direction, 1)
+                        establish_bridge(island.x, island.y, direction, 1)
                         any_operation_done = True
                 else:
                     there_is_cause = False
@@ -185,9 +200,27 @@ def solve(grid: list[list[Node]], use_given: bool = True) -> list[list[Node]]:
                     if there_is_cause:
                         for direction, thickness in direction_info.items():
                             if thickness != 1:
-                                establish_bridge(grid, island.x, island.y, direction, 1)
+                                establish_bridge(island.x, island.y, direction, 1)
                                 any_operation_done = True
-    return grid
+
+
+def tree_search_solution() -> None:
+    global _grid, _open_islands
+
+
+@collect_garbage
+def solve(grid: list[list[Node]]) -> list[list[Node]]:
+    """
+    Solve the given grid by trying rules and brute forcing when it is stuck.\n
+    Return the solved grid.
+    """
+    global _grid, _open_islands
+    _grid = grid
+    _open_islands = []
+    solve_by_rules()
+    if len(_open_islands) != 0:
+        tree_search_solution()
+    return deepcopy(grid)
 
 
 def main():
