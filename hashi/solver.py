@@ -136,7 +136,7 @@ def solve(grid: list[list[Node]], use_given: bool = True) -> list[list[Node]]:
     any_operation_done: bool = True
     while any_operation_done: # if no operation was done, puzzle is unsolvable
         any_operation_done = False
-        for i in range(len(open_islands) - 1, 0, -1): # check every open island each cycle
+        for i in range(len(open_islands) - 1, -1, -1): # check every open island each cycle
             island  = open_islands[i]
             #print_node_data(island)
             #draw_grid(grid)
@@ -150,7 +150,6 @@ def solve(grid: list[list[Node]], use_given: bool = True) -> list[list[Node]]:
             direction_info: dict[int, int] = bridge_out_info(grid, island.x, island.y)
             max_out = sum(direction_info.values())
             dir = len(list(direction_info.keys()))
-            
             #print(f"Island at ({island.x}, {island.y})")
             #print(f"Dirs: {direction_info}")
             #print(f"Max out: {max_out}")

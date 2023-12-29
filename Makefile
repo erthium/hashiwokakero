@@ -2,9 +2,9 @@ PY := python3
 FLAGS := -b
 SRC_DIR := hashi
 TESTS_DIR := tests
-PUZZLES_DIR := puzzles
+PUZZLES_DIR := $(SRC_DIR)/puzzles
 
-TEST_PUZZLE = $(PUZZLES_DIR)/puzzle_3.csv
+TEST_PUZZLE = $(PUZZLES_DIR)/puzzle_2.csv
 
 REQUIREMENTS_FILE := requirements.txt
 
@@ -31,6 +31,6 @@ clean:
 
 
 showoff:
-	$(PY) $(FLAGS) $(VISUALISER_SCRIPT) -e $(TEST_PUZZLE) &
+	# $(PY) $(FLAGS) $(VISUALISER_SCRIPT) -e $(TEST_PUZZLE) &
 	$(PY) $(FLAGS) $(VISUALISER_SCRIPT) -s $(TEST_PUZZLE) &
 	$(PY) $(FLAGS) $(SOLVER_SCRIPT) $(TEST_PUZZLE) &
