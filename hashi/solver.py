@@ -229,14 +229,43 @@ def get_groups() -> list[list[Node]]:
     If there is a group with no open islands, the solution is wrong.\n
     If the list is empty and _group_count is 1, the puzzle is solved.
     """
-    pass
+    global _grid, _group_count, _groups
+    _group_count = 0
+    _groups = []
+    grid_w = len(_grid)
+    grid_h = len(_grid[0])
+    visited = [[False for i in range(grid_h)] for j in range(grid_w)]
+    for i in range(grid_w):
+        for j in range(grid_h):
+            if _grid[i][j].n_type == 1 and not visited[i][j]:
+                _group_count += 1
+                _groups.append([])
+                stack = [(i, j)]
+                while len(stack) != 0:
+                    x, y = stack.pop()
+                    if not visited[x][y]:
+                        visited[x][y] = True
+                        if _grid[x][y].needed != 0:
+                            _groups[-1].append(_grid[x][y])
+                        for direction in [0, 1, 2, 3]:
+                            dir_vector = direction_to_vector(direction)
+                            check_x = x + dir_vector[0]
+                            check_y = y + dir_vector[1]
+                            if is_in_grid(check_x, check_y, grid_w, grid_h):
+                                if _grid[check_x][check_y].n_type == 2 and not visited[check_x][check_y] and _grid[check_x][check_y].b_dir == direction % 2:
+                                    while _grid[check_x][check_y].n_type != 1:
+                                        visited[check_x][check_y] = True
+                                        check_x += dir_vector[0]
+                                        check_y += dir_vector[1]
+                                    stack.append((check_x, check_y))
 
 
 def tree_search_solution() -> None:
     """
-
+    Do not use directly, use solve() instead.\n
     """
-    global _grid, _open_islands
+    global _grid, _open_islands, _group_count, _groups
+    get_groups()
 
 
 @collect_garbage
