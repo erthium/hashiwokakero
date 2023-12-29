@@ -40,23 +40,34 @@ from export import parse_args_empty
 from copy import deepcopy
 
 # global variables
+## general
 _grid: list[list[Node]] = None
 _open_islands: list[Node] = None
+## tree search variables
+_group_count: int = 0
+_groups: list[list[Node]] = None
 
-# global variable removal decorator
+
 def collect_garbage(func):
+    """
+    To reset global variables after each solve call.\n
+    Only to be used in the main -public- solve function.
+    """
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         global _grid, _open_islands
         _grid = None
         _open_islands = None
+        _group_count = 0
+        _groups = None
         return result
     return wrapper
 
 
 def bridge_out_info(x: int, y: int) -> dict[int, int]:
     """
-    {0->left, 1->up, 2->right, 3->down}
+    Takes an island node and returns a dictionary of possible bridge directions and their output count.\n
+    Output Format: {0->left, 1->up, 2->right, 3->down}
     """
     global _grid
     grid_w = len(_grid)
@@ -109,6 +120,13 @@ def bridge_out_info(x: int, y: int) -> dict[int, int]:
 
 
 def establish_bridge(x: int, y: int, direction: int, thickness: int) -> None:
+    """
+    Takes an island node and builds a bridge in the given direction and thickness.\n
+    Also increases the current_in of the target node by thickness.\n
+    Assumes the bridge is possible, and the node is an island.\n
+    Works if there is already a single bridge in the direction.\n
+    Returns nothing.
+    """
     global _grid
     assert _grid[x][y].n_type == 1
     assert is_in_grid(x, y, len(_grid), len(_grid[0]))
@@ -134,12 +152,11 @@ def establish_bridge(x: int, y: int, direction: int, thickness: int) -> None:
 
 def solve_by_rules() -> None:
     """
-    Do not use directly, use bruteforce_solve() instead.\n
-    Get an empty grid and applies essential principles to solve it.\n
-    If use_given is False, deepcopies the grid and solves the copy.\n
-    Return True if solvable, False if unsolvable.\n
-    If grid is half-solved, nodes need to be marked with 
-    current out and bridges need to be marked as bridges.
+    Do not use directly, use solve() instead.\n
+    Apply essential principles to the grid.\n
+    If no operation is done after iterating through all open islands, the puzzle is unsolvable by essential rules.\n
+    If no open islands are left, the puzzle is solved.\n
+    Returns nothing.
     """
     global _grid, _open_islands
     # get all open islands
@@ -204,7 +221,21 @@ def solve_by_rules() -> None:
                                 any_operation_done = True
 
 
+def get_groups() -> list[list[Node]]:
+    """
+    Searches through the entire grid and returns the list of open islands in each connected island group.\n
+    Also sets the '_group_count: int' global variable.\n
+    Output Format: [ [N, N, N], [N, N], [N, N, N, N, N], ...]\n
+    If there is a group with no open islands, the solution is wrong.\n
+    If the list is empty and _group_count is 1, the puzzle is solved.
+    """
+    pass
+
+
 def tree_search_solution() -> None:
+    """
+
+    """
     global _grid, _open_islands
 
 
