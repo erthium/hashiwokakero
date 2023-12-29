@@ -42,10 +42,15 @@ from copy import deepcopy
 # global variables
 ## general
 _grid: list[list[Node]] = None
+_grid_w: int = None
+_grid_h: int = None
 _open_islands: list[Node] = None
 ## tree search variables
-_group_count: int = 0
+_group_count: int = None
 _groups: list[list[Node]] = None
+_moves: list[list[Node, Node, int]] = None # [Node, Node, thickness]
+_move_log: list[list[Node, Node, int]] = None # [Node, Node, thickness]
+_depth_indexes: list[int] = None
 
 
 def collect_garbage(func):
@@ -55,11 +60,16 @@ def collect_garbage(func):
     """
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        global _grid, _open_islands
+        global _grid, _grid_w, _grid_h, _open_islands, _group_count, _groups, _moves, _move_log, _depth_indexes
         _grid = None
+        _grid_w = None
+        _grid_h = None
         _open_islands = None
-        _group_count = 0
+        _group_count = None
         _groups = None
+        _moves = None
+        _move_log = None
+        _depth_indexes = None
         return result
     return wrapper
 
@@ -69,7 +79,6 @@ def bridge_out_info(x: int, y: int) -> dict[int, int]:
     Takes an island node and returns a dictionary of possible bridge directions and their output count.\n
     Output Format: {0->left, 1->up, 2->right, 3->down}
     """
-    global _grid
     grid_w = len(_grid)
     grid_h = len(_grid[0])
     assert _grid[x][y].n_type == 1
@@ -138,7 +147,7 @@ def establish_bridge(x: int, y: int, direction: int, thickness: int) -> None:
     check_y = y + dir_vector[1]
     while _grid[check_x][check_y].n_type != 1:
         if _grid[check_x][check_y].n_type == 2:
-            assert _grid[check_x][check_y].b_dir == direction % 2
+            assert _grid[check_x][check_y].b_dir == direction % 2, f"Bridge direction is {direction % 2}, but should be {_grid[check_x][check_y].b_dir}"
             assert _grid[check_x][check_y].b_thickness == 1
             assert _grid[check_x][check_y].b_thickness + thickness == 2
             _grid[check_x][check_y].b_thickness += thickness
@@ -160,11 +169,6 @@ def solve_by_rules() -> None:
     """
     global _grid, _open_islands
     # get all open islands
-    for i in range(len(_grid)):
-        for j in range(len(_grid[0])):
-            if _grid[i][j].n_type == 1:
-                _open_islands.append(_grid[i][j])
-    
     any_operation_done: bool = True
     while any_operation_done: # if no operation was done, puzzle is unsolvable
         any_operation_done = False
@@ -221,11 +225,64 @@ def solve_by_rules() -> None:
                                 any_operation_done = True
 
 
-def get_groups() -> list[list[Node]]:
+def get_moves() -> None:
     """
-    Searches through the entire grid and returns the list of open islands in each connected island group.\n
+    Do not use directly, use solve() instead.\n
+    TODO: Could be optimized by creating a new function like bridge_out_info, but returning hit Nodes directly.\n 
+    """
+    global _moves
+    _moves = []
+    for island in _open_islands:
+        for direction, thickness in bridge_out_info(island.x, island.y).items():
+            dir_vector = direction_to_vector(direction)
+            check_x = island.x + dir_vector[0]
+            check_y = island.y + dir_vector[1]
+            while _grid[check_x][check_y].n_type != 1:
+                check_x += dir_vector[0]
+                check_y += dir_vector[1]
+            # check if move is already in moves
+            already_in_moves = False
+            for move in _moves:
+                if move[1].x == island.x and move[1].y == island.y and move[0].x == check_x and move[0].y == check_y: 
+                    already_in_moves = True
+                    break
+            if not already_in_moves:
+                _moves.append([island, _grid[check_x][check_y], thickness])
+
+
+def take_back_move() -> None:
+    # pop the last move from move log
+    # de-establish the bridge according to the move
+    global _move_log, _depth_indexes
+    move = _move_log.pop()
+    _depth_indexes.pop()
+    direction = -1
+    if move[0].x == move[1].x: direction = 0 if move[0].y < move[1].y else 2
+    else: direction = 1 if move[0].x < move[1].x else 3
+    dir_vector = direction_to_vector(direction)
+    check_x = move[0].x + dir_vector[0]
+    check_y = move[0].y + dir_vector[1]
+    is_following_bridge = _grid[check_x][check_y].b_thickness != move[2]
+    while _grid[check_x][check_y].n_type != 1:
+        if is_following_bridge: 
+            _grid[check_x][check_y].b_thickness -= 1
+        else:
+            _grid[check_x][check_y].make_empty()
+        check_x += dir_vector[0]
+        check_y += dir_vector[1]
+    move[0].current_in -= move[2]
+    move[0].current_in -= move[2]
+    # for debug purposes
+    assert _grid[check_x][check_y].n_type == 1
+    assert _grid[check_x][check_y].x == move[1].x and _grid[check_x][check_y].y == move[1].y
+    get_moves()
+
+
+def get_groups() -> None:
+    """
+    Searches through the entire grid and sets the list of open islands in each connected island group.\n
     Also sets the '_group_count: int' global variable.\n
-    Output Format: [ [N, N, N], [N, N], [N, N, N, N, N], ...]\n
+    _groups Format: [ [N, N, N], [N, N], [N, N, N, N, N], ...]\n
     If there is a group with no open islands, the solution is wrong.\n
     If the list is empty and _group_count is 1, the puzzle is solved.
     """
@@ -260,13 +317,47 @@ def get_groups() -> list[list[Node]]:
                                     stack.append((check_x, check_y))
 
 
-def tree_search_solution() -> None:
+def is_unsolvable() -> bool:
+    """
+    Calculates the island groups and checks if any of them have no open islands.\n
+    Returns True if the puzzle is unsolvable, False otherwise.
+    """
+    get_groups()
+    for group in _groups:
+        if len(group) == 0:
+            return True
+    return False
+    
+
+def solve_brutally() -> None:
     """
     Do not use directly, use solve() instead.\n
     """
-    global _grid, _open_islands, _group_count, _groups
-    get_groups()
-
+    global _grid, _open_islands, _move_log, _depth_indexes
+    depth = -1
+    get_moves()
+    while len(_moves) > 0:
+        get_moves()
+        depth += 1
+        if len(_depth_indexes) <= depth:
+            _depth_indexes.append(0)
+        else: 
+            _depth_indexes[depth] += 1
+        if _depth_indexes[depth] >= len(_moves):
+            take_back_move()
+            depth -= 1
+            continue
+        move = _moves[_depth_indexes[depth]]
+        _move_log.append(move)
+        direction = -1
+        if move[0].x == move[1].x: direction = 2 if move[0].y < move[1].y else 0
+        else: direction = 3 if move[0].x < move[1].x else 1
+        establish_bridge(move[0].x, move[0].y, direction, move[2])
+        if is_unsolvable():
+            take_back_move()
+            depth -= 1
+            continue
+        
 
 @collect_garbage
 def solve(grid: list[list[Node]]) -> list[list[Node]]:
@@ -274,12 +365,20 @@ def solve(grid: list[list[Node]]) -> list[list[Node]]:
     Solve the given grid by trying rules and brute forcing when it is stuck.\n
     Return the solved grid.
     """
-    global _grid, _open_islands
+    global _grid, _grid_h, _grid_w, _open_islands, _move_log, _depth_indexes
     _grid = grid
+    _grid_w = len(grid)
+    _grid_h = len(grid[0])
     _open_islands = []
+    _move_log = []
+    _depth_indexes = []
+    for i in range(len(_grid)):
+        for j in range(len(_grid[0])):
+            if _grid[i][j].n_type == 1:
+                _open_islands.append(_grid[i][j])
     solve_by_rules()
     if len(_open_islands) != 0:
-        tree_search_solution()
+        solve_brutally()
     return deepcopy(grid)
 
 

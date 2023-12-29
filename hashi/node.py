@@ -21,6 +21,12 @@ class Node:
     def needed(self) -> int:
         return self.i_count - self.current_in
 
+    def make_empty(self) -> None:
+        self.n_type = 0
+        self.i_count = -1
+        self.b_thickness = -1
+        self.b_dir = -1
+
     def make_island(self, i_count: int) -> None:
         self.n_type = 1
         self.i_count = i_count
