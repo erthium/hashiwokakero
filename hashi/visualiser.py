@@ -40,7 +40,8 @@ def draw_grid_old(grid: list[list[Node]]) -> None:
 
 from node import Node
 from ui_elements import Button, ProcessElements
-from export import import_empty_grid, import_solution_grid, grid_to_surface, parse_args
+from export import import_empty_grid, import_solution_grid, grid_to_surface
+from arg_parser import parse_args
 import pygame
 
 

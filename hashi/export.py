@@ -1,4 +1,5 @@
 from node import Node, direction_to_vector, is_in_grid
+from arg_parser import parse_args
 import pygame
 import os
 
@@ -224,59 +225,6 @@ def output_image(grid: list[list[Node]], path: str, cell_unit: int = 200) -> boo
         print(f"ERROR: {e}")
         return False
     return True
-
-
-def parse_args(argv: list[str]) -> list[list[Node]]:
-    """
-    Parse the system arguments and returns the grid, empty or solution according to flags.
-    """
-    import os
-    if len(argv) != 3:
-        print("Usage: python3 ___.py <-e||-s> <path_to_grid_file>")
-        return -1
-    path = argv[2]
-    if not os.path.isfile(path):
-        print("ERROR: File does not exist")
-        return -1
-    if argv[1] == "-e":
-        grid = import_empty_grid(path)
-    elif argv[1] == "-s":
-        grid = import_solution_grid(path)
-    else:
-        print("Usage: python3 ___.py <-e||-s> <path_to_grid_file>")
-        return -1
-    return grid
-
-
-def parse_args_empty(argv: list[str]) -> list[list[Node]]:
-    """
-    Parse the system arguments and returns the empty grid.
-    """
-    import os
-    if len(argv) != 2:
-        print(f"Usage: python3 ___.py <path>")
-        return -1
-    path = argv[1]
-    if not os.path.isfile(path):
-        print("ERROR: File does not exist")
-        return -1
-    grid = import_empty_grid(path)
-    return grid
-
-
-def parse_to_path(argv: list[str]) -> str:
-    """
-    Parse the system arguments and returns the path.
-    """
-    import os
-    if len(argv) != 2:
-        print(f"Usage: python3 ___.py <path>")
-        return -1
-    path = argv[1]
-    if os.path.isfile(path):
-        print(f"ERROR: There is an existing file at '{path}'")
-        return -1
-    return path
 
 
 def main():

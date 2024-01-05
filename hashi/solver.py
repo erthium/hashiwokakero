@@ -36,7 +36,7 @@ which may contain multiple solutions
 from time import sleep
 from node import Node, direction_to_vector, is_in_grid
 from visualiser import draw_grid, print_node_data
-from export import parse_args_empty
+from arg_parser import parse_args_empty
 from copy import deepcopy
 
 # global variables
@@ -51,6 +51,8 @@ _groups: list[list[Node]] = None
 _moves: list[list[Node, Node, int]] = None # [Node, Node, thickness]
 _move_log: list[list[Node, Node, int]] = None # [Node, Node, thickness]
 _depth_indexes: list[int] = None
+## difficulty prediction variables
+_step_count: int = None
 
 
 def collect_garbage(func):
@@ -60,7 +62,7 @@ def collect_garbage(func):
     """
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        global _grid, _grid_w, _grid_h, _open_islands, _group_count, _groups, _moves, _move_log, _depth_indexes
+        global _grid, _grid_w, _grid_h, _open_islands, _group_count, _groups, _moves, _move_log, _depth_indexes, _step_count
         _grid = None
         _grid_w = None
         _grid_h = None
@@ -70,6 +72,7 @@ def collect_garbage(func):
         _moves = None
         _move_log = None
         _depth_indexes = None
+        _step_count = None
         return result
     return wrapper
 
@@ -167,12 +170,13 @@ def solve_by_rules() -> None:
     If no open islands are left, the puzzle is solved.\n
     Returns nothing.
     """
-    global _grid, _open_islands
+    global _grid, _open_islands, _step_count
     # get all open islands
     any_operation_done: bool = True
     while any_operation_done: # if no operation was done, puzzle is unsolvable
         any_operation_done = False
         for i in range(len(_open_islands) - 1, -1, -1): # check every open island each cycle
+            _step_count += 1
             island  = _open_islands[i]
             #print_node_data(island)
             #draw_grid(_grid)
@@ -364,26 +368,26 @@ def solve_brutally() -> None:
 
 
 @collect_garbage
-def solve(grid: list[list[Node]]) -> list[list[Node]]:
+def solve(grid: list[list[Node]]) -> tuple[list[list[Node]], int]:
     """
     Solve the given grid by trying rules and brute forcing when it is stuck.\n
-    Return the solved grid.
+    Return the tuple of solved grid and step count for difficulty prediction.
     """
-    global _grid, _grid_h, _grid_w, _open_islands, _move_log, _depth_indexes
+    global _grid, _grid_h, _grid_w, _open_islands, _move_log, _depth_indexes, _step_count
     _grid = grid
     _grid_w = len(grid)
     _grid_h = len(grid[0])
     _open_islands = []
     _move_log = []
     _depth_indexes = []
+    _step_count = 0
     for i in range(len(_grid)):
         for j in range(len(_grid[0])):
             if _grid[i][j].n_type == 1:
                 _open_islands.append(_grid[i][j])
     solve_by_rules()
-    if len(_open_islands) != 0:
-        solve_brutally()
-    return deepcopy(grid)
+    #if len(_open_islands) != 0: solve_brutally()
+    return deepcopy(grid), _step_count
 
 
 def main():
