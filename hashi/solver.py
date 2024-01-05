@@ -251,6 +251,7 @@ def get_moves() -> None:
 
 
 def take_back_move() -> None:
+    print("Taking back move")
     # pop the last move from move log
     # de-establish the bridge according to the move
     global _move_log, _depth_indexes
@@ -274,7 +275,7 @@ def take_back_move() -> None:
     move[0].current_in -= move[2]
     # for debug purposes
     assert _grid[check_x][check_y].n_type == 1
-    assert _grid[check_x][check_y].x == move[1].x and _grid[check_x][check_y].y == move[1].y
+    assert _grid[check_x][check_y].x == move[1].x and _grid[check_x][check_y].y == move[1].y, f"({check_x}, {check_y}) != ({move[1].x}, {move[1].y})"
     get_moves()
 
 
@@ -337,7 +338,6 @@ def solve_brutally() -> None:
     depth = -1
     get_moves()
     while len(_moves) > 0:
-        get_moves()
         depth += 1
         if len(_depth_indexes) <= depth:
             _depth_indexes.append(0)
@@ -350,14 +350,18 @@ def solve_brutally() -> None:
         move = _moves[_depth_indexes[depth]]
         _move_log.append(move)
         direction = -1
-        if move[0].x == move[1].x: direction = 2 if move[0].y < move[1].y else 0
-        else: direction = 3 if move[0].x < move[1].x else 1
+        if move[0].x == move[1].x: direction = 3 if move[0].y < move[1].y else 1
+        else: direction = 2 if move[0].x < move[1].x else 0
         establish_bridge(move[0].x, move[0].y, direction, move[2])
         if is_unsolvable():
             take_back_move()
             depth -= 1
             continue
-        
+        if len(_open_islands) == 0:
+            return
+        else: 
+            take_back_move()
+
 
 @collect_garbage
 def solve(grid: list[list[Node]]) -> list[list[Node]]:
