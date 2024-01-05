@@ -51,7 +51,8 @@ potentially have another bridge in an empty direction.
 from node import Node, direction_to_vector, is_in_grid
 from random import randint, choice
 from visualiser import draw_grid
-from export import save_grid, parse_to_path
+from export import save_grid
+from arg_parser import parse_to_path
 
 
 def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
