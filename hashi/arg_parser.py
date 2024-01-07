@@ -53,3 +53,22 @@ def parse_to_path(argv: list[str]) -> str:
         print(f"ERROR: There is an existing file at '{path}'")
         return -1
     return path
+
+
+def parse_to_amount(argv: list[str]) -> int:
+    """
+    Parse the system arguments and returns the amount.
+    """
+    if len(argv) != 2:
+        print(f"Usage: python3 ___.py <amount>")
+        return -1
+    # safely check if argv[1] is an integer
+    try:
+        amount = int(argv[1])
+        if amount <= 0:
+            print(f"ERROR: '{argv[1]}' is not a positive integer")
+            return -1
+    except ValueError:
+        print(f"ERROR: '{argv[1]}' is not an integer")
+        return -1
+    return amount

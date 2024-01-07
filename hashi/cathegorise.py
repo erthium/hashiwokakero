@@ -1,7 +1,22 @@
+"""
+This module contains functions to cathegorise a puzzle.
+
+To determine difficulty, two factors are taken into account:
+
+1. Total island count / amount of islands: as the i_count of 
+islands get lower in average, the difficulty increases.
+2. Step count to solve
+
+For the first factor, it is easy to put in a range from 0 to 1.
+
+For the second factor, it is not so easy. The step count can be
+any positive integer. What to do about it?
+"""
+
 from node import Node
 
 ISLAND_WEIGHT_FACTOR: float = 0.3
-STEP_WEIGHT_FACTOR: float = 1 - ISLAND_WEIGHT_FACTOR
+STEP_WEIGHT_FACTOR: float = 0.7
 
 def determine_difficulty(grid: list[list[Node]], step_count: int) -> float:
     """
@@ -20,5 +35,6 @@ def determine_difficulty(grid: list[list[Node]], step_count: int) -> float:
     island_count_weight: float = total_island_count / island_amount / 8
     step_count_weight: float = step_count / island_amount
     # TODO: calculate difficulty and return
+    return island_count_weight
 
 

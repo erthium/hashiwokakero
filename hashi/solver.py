@@ -393,8 +393,9 @@ def solve(grid: list[list[Node]]) -> tuple[list[list[Node]], int]:
 def main():
     import sys
     grid_to_solve: list[list[Node]] = parse_args_empty(sys.argv)
-    solve(grid_to_solve)
-    draw_grid(grid_to_solve)
+    solved, steps = solve(grid_to_solve)
+    print(f"Solved in {steps} steps")
+    draw_grid(solved)
     #solution_grid = import_solution_grid(path)
 
 

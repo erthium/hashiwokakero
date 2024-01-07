@@ -12,11 +12,20 @@ REQUIREMENTS_FILE := requirements.txt
 GENERATOR_SCRIPT := $(SRC_DIR)/generator.py
 SOLVER_SCRIPT := $(SRC_DIR)/solver.py
 VISUALISER_SCRIPT := $(SRC_DIR)/visualiser.py
+PRODUCTION_SCRIPT := $(SRC_DIR)/production.py
 
 TEST_SCRIPT := $(TESTS_DIR)/hashi_test.py
 
 
-.PHONY: init test clean showoff see
+DATABASE_DIR := database
+EASY_PUZZLES_DIR := $(DATABASE_DIR)/easy
+INTERMEDIATE_PUZZLES_DIR := $(DATABASE_DIR)/intermediate
+HARD_PUZZLES_DIR := $(DATABASE_DIR)/hard
+UNORDERED_PUZZLES_DIR := $(DATABASE_DIR)/unordered
+
+P := 10
+
+.PHONY: init test clean showoff see nuke_db produce
 
 
 init:
@@ -40,3 +49,11 @@ showoff:
 see:
 	$(PY) $(FLAGS) $(VISUALISER_SCRIPT) -s $(MANUAL_TEST_PUZZLE) &
 	$(PY) $(FLAGS) $(SOLVER_SCRIPT) $(MANUAL_TEST_PUZZLE) &
+
+
+produce:
+	$(PY) $(FLAGS) $(PRODUCTION_SCRIPT) $(P)
+
+
+nuke_db:
+	rm -f $(EASY_PUZZLES_DIR)/* $(INTERMEDIATE_PUZZLES_DIR)/* $(HARD_PUZZLES_DIR)/* $(UNORDERED_PUZZLES_DIR)/*

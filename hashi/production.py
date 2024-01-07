@@ -7,6 +7,7 @@ from generator import generate_till_full
 from export import save_grid
 from solver import solve
 from cathegorise import determine_difficulty
+from arg_parser import parse_to_amount
 
 # DIRECTORIES
 import os
@@ -24,10 +25,12 @@ DATABASE_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '../
 EASY_DIR: str = os.path.join(DATABASE_DIR, "easy")
 INTERMEDIATE_DIR: str = os.path.join(DATABASE_DIR, "intermediate")
 HARD_DIR: str = os.path.join(DATABASE_DIR, "hard")
+UNORDERED_DIR: str = os.path.join(DATABASE_DIR, "unordered")
 assert os.path.isdir(DATABASE_DIR)
 assert os.path.isdir(EASY_DIR)
 assert os.path.isdir(INTERMEDIATE_DIR)
 assert os.path.isdir(HARD_DIR)
+assert os.path.isdir(UNORDERED_DIR)
 easy_puzzle_count: int = len(os.listdir(EASY_DIR))
 intermediate_puzzle_count: int = len(os.listdir(INTERMEDIATE_DIR))
 hard_puzzle_count: int = len(os.listdir(HARD_DIR))
@@ -63,7 +66,20 @@ def save_according_to_difficulty(grid: list[list[Node]], difficulty: int) -> Non
     save_grid(grid, puzzle_path)
 
 
-def produce(amount: int) -> None:
+def save_unordered(grid: list[list[Node]], step_count: int) -> None:
+    """
+    Saves the grid to the unordered directory.
+    """
+    index = 0
+    step_str = f"{step_count}_{index}"
+    puzzle_path = os.path.join(UNORDERED_DIR, f"{step_str}.csv")
+    while os.path.isfile(puzzle_path):
+        index += 1
+        step_str = f"{step_count}_{index}"
+        puzzle_path = os.path.join(UNORDERED_DIR, f"{step_str}.csv")
+    save_grid(grid, puzzle_path)
+
+def produce(amount: int, cathegorise: bool = True) -> None:
     """
     Steps:
     1. Generate a full grid
@@ -72,16 +88,23 @@ def produce(amount: int) -> None:
     """
 
     while amount > 0:
-        grid = generate_till_full()
+        print(f"Generating {amount} puzzles...")
+        grid = generate_till_full(50, 50)
         solved_grid, step_count = solve(grid)
-        if not is_completed(solved_grid): return # if the grid is not solvable, don't save it
+        #if not is_completed(solved_grid): continue # if the grid is not solvable, don't save it
         difficulty = determine_difficulty(solved_grid, step_count)
-        save_according_to_difficulty(solved_grid, difficulty)
+        if cathegorise:
+            save_according_to_difficulty(solved_grid, difficulty)
+        else:
+            save_unordered(solved_grid, step_count)
         amount -= 1
 
 
 def main() -> None:
-    pass
+    import sys
+    amount = parse_to_amount(sys.argv)
+    if amount == -1: return
+    produce(amount, False)
 
 
 if __name__ == "__main__":
