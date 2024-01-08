@@ -25,6 +25,15 @@ MAP_PATH: str = os.path.join(DATABASE_DIR, "difficulty_map.json")
 hash_table: list[list[int, int, int, int]] = []
 
 
+def get_table(json_path: str) -> list[list[int, int, int, int]]:
+    """
+    Loads the entire table from a json file.
+    """
+    import json
+    with open(json_path, "r") as file:
+        return json.load(file)
+
+
 def save_table(json_path: str) -> None:
     """
     Dumps the entire table to a json file.\n

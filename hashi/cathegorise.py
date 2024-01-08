@@ -14,9 +14,25 @@ any positive integer. What to do about it?
 """
 
 from node import Node
+from difficulty_mapper import get_table, MAP_PATH
+
 
 ISLAND_WEIGHT_FACTOR: float = 0.3
 STEP_WEIGHT_FACTOR: float = 0.7
+STEP_COUNT_MAP: list[list[int, int, int, int]] = get_table(MAP_PATH)
+
+
+def get_geometry_count_boundries(width: int, height: int) -> list[int, int]:
+    """
+    Gets a geometry and returns the step count boundries.\n
+    Returns a list of two integers, min and max.\n
+    Returns [-1, -1] if geometry is not found in map.
+    """
+    for geometry in STEP_COUNT_MAP:
+        if geometry[0] == width and geometry[1] == height:
+            return [geometry[2], geometry[3]]
+    return [-1, -1]
+
 
 def determine_difficulty(grid: list[list[Node]], step_count: int) -> float:
     """
@@ -33,8 +49,9 @@ def determine_difficulty(grid: list[list[Node]], step_count: int) -> float:
                 island_amount += 1
                 total_island_count += grid[x][y].i_count
     island_count_weight: float = total_island_count / island_amount / 8
-    step_count_weight: float = step_count / island_amount
-    # TODO: calculate difficulty and return
-    return island_count_weight
+    min_step, max_step = get_geometry_count_boundries(grid_width, grid_height)
+    step_count_weight: float = (step_count - min_step) / (max_step - min_step)
+    output = island_count_weight * ISLAND_WEIGHT_FACTOR + step_count_weight * STEP_WEIGHT_FACTOR
+    return output
 
 
