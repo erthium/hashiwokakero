@@ -52,7 +52,7 @@ class Tester(TestCase):
                 solution_grid = import_solution_grid(current_path)
                 grid_w = len(empty_grid)
                 grid_h = len(empty_grid[0])
-                solved_grid = solve(empty_grid, False)
+                solved_grid, _ = solve(empty_grid)
                 failed = False
                 for x in range(grid_w):
                     if failed: break
