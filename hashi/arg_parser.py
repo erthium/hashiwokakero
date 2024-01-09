@@ -55,20 +55,22 @@ def parse_to_path(argv: list[str]) -> str:
     return path
 
 
-def parse_to_amount(argv: list[str]) -> int:
+def parse_to_geometry_n_amount(argv: list[str]) -> list[int, int, int]:
     """
     Parse the system arguments and returns the amount.
     """
-    if len(argv) != 2:
-        print(f"Usage: python3 ___.py <amount>")
+    if len(argv) != 4:
+        print(f"Usage: python3 ___.py <width> <height> <amount>")
         return -1
-    # safely check if argv[1] is an integer
-    try:
-        amount = int(argv[1])
-        if amount <= 0:
-            print(f"ERROR: '{argv[1]}' is not a positive integer")
+    output = []
+    for i in range(1, 4):
+        try:
+            positive_int = int(argv[i])
+            if positive_int <= 0:
+                print(f"ERROR: '{argv[i]}' is not a positive integer")
+                return -1
+        except ValueError:
+            print(f"ERROR: '{argv[i]}' is not an integer")
             return -1
-    except ValueError:
-        print(f"ERROR: '{argv[1]}' is not an integer")
-        return -1
-    return amount
+        output.append(positive_int)
+    return output

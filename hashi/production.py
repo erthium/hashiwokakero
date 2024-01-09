@@ -1,5 +1,12 @@
 """
+Mass production script for generating puzzles.
 
+Steps:
+1. Generate a full grid
+2. Solve it and determine the difficulty
+3. Save it according to the difficulty
+
+Usage: python3 production.py <width> <height> <amount>
 """
 
 from node import Node
@@ -7,7 +14,7 @@ from generator import generate_till_full
 from export import save_grid
 from solver import solve
 from cathegorise import determine_difficulty
-from arg_parser import parse_to_amount
+from arg_parser import parse_to_geometry_n_amount
 
 # DIRECTORIES
 import os
@@ -20,6 +27,7 @@ project/
         easy/
         intermediate/
         hard/
+        undordered/
 """
 DATABASE_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '../database'))
 EASY_DIR: str = os.path.join(DATABASE_DIR, "easy")
@@ -51,17 +59,17 @@ def save_according_to_difficulty(grid: list[list[Node]], difficulty: int) -> Non
     """
     Saves the grid according to its difficulty.
     """
-    global easy_puzzle_count, intermediate_puzzle_count, hard_puzzle_count
-    puzzle_path = None
-    if difficulty < 0.3:
-        puzzle_path = os.path.join(EASY_DIR, f"puzzle_{easy_puzzle_count}.csv")
-        easy_puzzle_count += 1
-    elif difficulty < 0.6:
-        puzzle_path = os.path.join(INTERMEDIATE_DIR, f"puzzle_{intermediate_puzzle_count}.csv")
-        intermediate_puzzle_count += 1
-    else:
-        puzzle_path = os.path.join(HARD_DIR, f"puzzle_{hard_puzzle_count}.csv")
-        hard_puzzle_count += 1
+    directory = None
+    if difficulty < 0.3: directory = EASY_DIR
+    elif difficulty < 0.6: directory = INTERMEDIATE_DIR
+    else: directory = HARD_DIR
+    index = 0
+    difficulty_str = f"{difficulty:.5f}"
+    puzzle_path = os.path.join(directory, f"puzzle_{difficulty_str}.csv")
+    while os.path.isfile(puzzle_path):
+        difficulty_str = f"{difficulty:.5f}_{index}"
+        puzzle_path = os.path.join(directory, f"puzzle_{difficulty_str}.csv")
+        index += 1
     assert puzzle_path is not None
     save_grid(grid, puzzle_path)
 
@@ -79,7 +87,8 @@ def save_unordered(grid: list[list[Node]], step_count: int) -> None:
         puzzle_path = os.path.join(UNORDERED_DIR, f"{step_str}.csv")
     save_grid(grid, puzzle_path)
 
-def produce(amount: int, cathegorise: bool = True) -> None:
+
+def produce(width:int, height:int, amount: int, cathegorise: bool = True) -> None:
     """
     Steps:
     1. Generate a full grid
@@ -89,7 +98,7 @@ def produce(amount: int, cathegorise: bool = True) -> None:
 
     while amount > 0:
         print(f"Generating {amount} puzzles...")
-        grid = generate_till_full(50, 50)
+        grid = generate_till_full(width, height)
         solved_grid, step_count = solve(grid)
         #if not is_completed(solved_grid): continue # if the grid is not solvable, don't save it
         difficulty = determine_difficulty(solved_grid, step_count)
@@ -102,9 +111,9 @@ def produce(amount: int, cathegorise: bool = True) -> None:
 
 def main() -> None:
     import sys
-    amount = parse_to_amount(sys.argv)
-    if amount == -1: return
-    produce(amount, False)
+    args = parse_to_geometry_n_amount(sys.argv)
+    if args == -1: return
+    produce(*args, cathegorise=True)
 
 
 if __name__ == "__main__":

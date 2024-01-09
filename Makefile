@@ -25,6 +25,10 @@ HARD_PUZZLES_DIR := $(DATABASE_DIR)/hard
 UNORDERED_PUZZLES_DIR := $(DATABASE_DIR)/unordered
 
 P := 10
+W := 15
+H := 15
+
+sure=0
 
 .PHONY: init test clean showoff see produce map nuke_db
 
@@ -53,11 +57,13 @@ see:
 
 
 produce:
-	$(PY) $(FLAGS) $(PRODUCTION_SCRIPT) $(P)
+	$(PY) $(FLAGS) $(PRODUCTION_SCRIPT) $(W) $(H) $(P) 
 
 
 map:
 	$(PY) $(FLAGS) $(MAPPER_SCRIPT)
 
+
 nuke_db:
-	rm -f $(EASY_PUZZLES_DIR)/* $(INTERMEDIATE_PUZZLES_DIR)/* $(HARD_PUZZLES_DIR)/* $(UNORDERED_PUZZLES_DIR)/*
+	[ $(sure) -eq 1 ] && rm -f $(EASY_PUZZLES_DIR)/* $(INTERMEDIATE_PUZZLES_DIR)/* $(HARD_PUZZLES_DIR)/* $(UNORDERED_PUZZLES_DIR)/*
+	
