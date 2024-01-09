@@ -197,5 +197,10 @@ cython_debug/
 
 
 ## Other
-python3/puzzles
-python3/pdfs
+hashi/pdfs
+
+## Puzzle Database
+database/easy/*
+database/intermediate/*
+database/hard/*
+database/unordered/*

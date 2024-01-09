@@ -1,9 +1,11 @@
 """
-This script creates 10_000 puzzles for each geometry, and checks 
+This script creates <amount> puzzles for each geometry, and checks 
 how many steps does it take solve them to map step_count boundries
 to be able to determine difficulty while generating further puzzles.
 It increase both width and height by 5 each time.
 From 5x5 to 50x50
+
+TODO: We might want to map the step count with island amount instead of geometry.
 """
 
 from node import Node
