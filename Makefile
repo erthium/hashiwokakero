@@ -30,11 +30,14 @@ H := 15
 
 sure=0
 
-.PHONY: init test clean showoff see produce map nuke_db
-
+.PHONY: init freeze test clean showoff see produce map nuke_db
 
 init:
 	pip install -r $(REQUIREMENTS_FILE)
+
+
+freeze:
+	pip freeze > $(REQUIREMENTS_FILE)
 
 
 test:
@@ -66,4 +69,3 @@ map:
 
 nuke_db:
 	[ $(sure) -eq 1 ] && rm -f $(EASY_PUZZLES_DIR)/* $(INTERMEDIATE_PUZZLES_DIR)/* $(HARD_PUZZLES_DIR)/* $(UNORDERED_PUZZLES_DIR)/*
-	
