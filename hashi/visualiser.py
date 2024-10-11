@@ -162,7 +162,6 @@ def grid_to_surface(grid_size: tuple[int, int], grid: list[list[Node]], cell_uni
     return root
 
 
-
 def draw_grid(grid: list[list[Node]]) -> None:
     """
     Takes a 2D list of nodes and draws it on the screen with Pygame.
