@@ -10,69 +10,39 @@ TODO: We might want to map the step count with island amount instead of geometry
 
 from node import Node
 from generator import generate_till_full
-from export import save_grid
-from solver import solve
-
+from cathegorise import get_difficulty_value, save_diffiulty_map
 
 ITERATION_COUNT: int = 10_000
 
-# paths
-import os
-SCRIPT_DIR: str = os.path.dirname(__file__)
-PROJECT_DIR: str = os.path.abspath(os.path.join(SCRIPT_DIR, '../'))
-DATABASE_DIR: str = os.path.join(PROJECT_DIR, "database")
-MAP_PATH: str = os.path.join(DATABASE_DIR, "difficulty_map.json")
 
-# format: list of geometry, min and max step count -> [5, 5, 63, 267]
-hash_table: list[list[int, int, int, int]] = []
-
-
-def get_table(json_path: str) -> list[list[int, int, int, int]]:
-    """
-    Loads the entire table from a json file.
-    """
-    import json
-    with open(json_path, "r") as file:
-        return json.load(file)
-
-
-def save_table(json_path: str) -> None:
-    """
-    Dumps the entire table to a json file.\n
-    Rewrite the entire file each time.
-    """
-    import json
-    with open(json_path, "w") as file:
-        json.dump(hash_table, file)
-
-
-def genearate_and_solve(width: int, height: int, amount: int) -> list[int, int]:
+def genearate_and_cathegorise(width: int, height: int, amount: int) -> list[int, int]:
     """
     Generates a grid and solves it.
     """
-    min = 100000
-    max = 0
+    min = float("inf")
+    max = float("-inf")
     for _ in range(amount):
-        grid = generate_till_full(width, height)
-        _, step_count = solve(grid)
-        if step_count < min:
-            min = step_count
-        if step_count > max:
-            max = step_count
+        grid: list[list[Node]] = generate_till_full(width, height)
+        puzzle_difficulty = get_difficulty_value(grid)
+        if puzzle_difficulty < min:
+            min = puzzle_difficulty
+        if puzzle_difficulty > max:
+            max = puzzle_difficulty
     return [min, max]
 
 
-def iterate_all_geometries(json_path: str, amount: int) -> None:
+def iterate_all_geometries(amount: int) -> None:
+    hash_table: list[list[int, int, int, int]] = []
     for width in range(5, 51, 5):
         for height in range(5, 51, 5):
             print(f"Generating {width}x{height} puzzles...")
-            step_count = genearate_and_solve(width, height, amount)
-            hash_table.append([width, height, min(step_count), max(step_count)])
-            save_table(json_path)
+            min_difficulty, max_difficulty = genearate_and_cathegorise(width, height, amount)
+            hash_table.append([width, height, min_difficulty, max_difficulty])
+            save_diffiulty_map(hash_table)
 
 
 def main():
-    iterate_all_geometries(MAP_PATH, ITERATION_COUNT)
+    iterate_all_geometries(ITERATION_COUNT)
 
 
 if __name__ == "__main__":
