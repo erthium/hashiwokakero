@@ -15,6 +15,7 @@ from export import save_grid
 from solver import solve
 from cathegorise import determine_difficulty
 from arg_parser import parse_to_geometry_n_amount
+from copy import deepcopy
 
 # DIRECTORIES
 import os
@@ -99,19 +100,19 @@ def produce(width:int, height:int, amount: int, cathegorise: bool = True) -> Non
     while amount > 0:
         print(f"Generating {amount} puzzles...")
         grid = generate_till_full(width, height)
-        solved_grid, step_count = solve(grid)
+        solved_grid, rules_steps, brutal_steps = solve(deepcopy(grid))
         #if not is_completed(solved_grid): continue # if the grid is not solvable, don't save it
-        difficulty = determine_difficulty(solved_grid, step_count)
+        difficulty = determine_difficulty(solved_grid, rules_steps)
         if cathegorise:
-            save_according_to_difficulty(solved_grid, difficulty)
+            save_according_to_difficulty(grid, difficulty)
         else:
-            save_unordered(solved_grid, step_count)
+            save_unordered(grid, rules_steps)
         amount -= 1
 
 
 def main() -> None:
     import sys
-    args = parse_to_geometry_n_amount(sys.argv)
+    args = parse_to_geometry_n_amount(sys.argv) # width - height - amount
     if args == -1: return
     produce(*args, cathegorise=True)
 
