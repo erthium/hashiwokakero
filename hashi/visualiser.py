@@ -1,4 +1,6 @@
 """ --DEPRECATED--
+import pygame
+from ui_elements import Button, ProcessElements
 def draw_grid_old(grid: list[list[Node]]) -> None:
     pygame.init()
 
@@ -39,13 +41,15 @@ def draw_grid_old(grid: list[list[Node]]) -> None:
 """
 
 from node import Node, direction_to_vector, is_in_grid
-from ui_elements import Button, ProcessElements
 from arg_parser import parse_args
 import pygame
 import os
 
+
+# Constants
 ABS_DIR: str = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_FONT_PATH: str = ABS_DIR + '/data/SpaceMono-Regular.ttf'
+VISUALISER_INFO_PRINTED: bool = False
 
 
 def print_node_data(node: Node) -> None:
@@ -166,6 +170,10 @@ def draw_grid(grid: list[list[Node]]) -> None:
     """
     Takes a 2D list of nodes and draws it on the screen with Pygame.
     """
+    global VISUALISER_INFO_PRINTED
+    if VISUALISER_INFO_PRINTED != True:
+        print("Press Q to quit the visualizer.")
+        VISUALISER_INFO_PRINTED = True
     pygame.init()
     grid_width = len(grid)
     grid_height = len(grid[0])
@@ -182,6 +190,9 @@ def draw_grid(grid: list[list[Node]]) -> None:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 loop = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    loop = False
         pygame.display.update()
     pygame.quit()
 

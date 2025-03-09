@@ -194,10 +194,19 @@ def show_grid(grid: list[list[Node]]):
 
 
 def main():
-    import sys
-    path = parse_to_path(sys.argv)
-    if path == -1: return
-    grid = generate_till_full(10, 10)
+    import argparse, os
+    # parse args for width and height and output path
+    parser = argparse.ArgumentParser(description="Generates a Hashi puzzle")
+    parser.add_argument("width", type=int, help="Width of the puzzle")
+    parser.add_argument("height", type=int, help="Height of the puzzle")
+    parser.add_argument("path", type=str, help="Path to save the puzzle")
+    args = parser.parse_args()
+    width = args.width
+    height = args.height
+    path = args.path
+    assert width > 0 and height > 0
+    assert os.path.splitext(path)[1] == '.csv'
+    grid = generate_till_full(width, height)
     draw_grid(grid)
     save_grid(grid, path)
         

@@ -1,22 +1,15 @@
 """
 This module contains functions to cathegorise a puzzle.
 
-To determine difficulty, two factors are taken into account:
+To determine difficulty, five factors are taken into account:
 
-1. Total island count / amount of islands: as the i_count of 
-islands get lower in average, the difficulty increases.
-2. Step count to solve
-
-For the first factor, it is easy to put in a range from 0 to 1.
-
-For the second factor, it is not so easy. The step count can be
-any positive integer. What to do about it?
+1. Island Weight: The average island count of all islands.
+2. Island Amount: The amount of islands in the grid relative to the maximum possible amount.
+3. Below Seven: The amount of islands with count less than seven.
+4. By Rule Steps: The amount of steps taken by the solver by rule.
+5. Average Brutal Steps: The average amount of steps taken by the solver by brutal force.
 """
 
-""" --- TODO ---
-- Not sure how exactly to use island amount factor, more islands sometimes make it easier, sometimes harder
-We might be able to link them with island weigth factor
-"""
 
 from dataclasses import dataclass
 from node import Node
@@ -29,25 +22,8 @@ MAP_PATH: str = os.path.join(SCRIPT_DIR, "difficulty_map.json")
 ISLAND_WEIGHT_FACTOR: float = 0.61
 ISLAND_AMOUNT_FACTOR: float = 0.33
 BELOW_SEVEN_FACTOR: float = 0.06
-
-
-def get_diffiulty_map() -> list[list[int, int, int, int]]:
-    """
-    Loads the entire table from a json file.
-    """
-    import json
-    with open(MAP_PATH, "r") as file:
-        return json.load(file)
-
-
-def save_diffiulty_map(difficulty_map: list[list[int, int, int, int]]) -> None:
-    """
-    Dumps the entire table to a json file.\n
-    Rewrite the entire file each time.
-    """
-    import json
-    with open(MAP_PATH, "w") as file:
-        json.dump(difficulty_map, file)
+BY_RULE_STEP_FACTOR: float = 0.0
+BRUTAL_STEP_FACTOR: float = 0.0
 
 
 @dataclass
@@ -58,6 +34,27 @@ class PuzzleInformation:
     total_island_count: int
     total_seven_count: int
     total_eight_count: int
+    by_rule_steps: int
+    brutal_steps_list: list[int]
+
+
+def get_diffiulty_map() -> list[dict]:
+    """
+    Loads the entire table from a json file.
+    """
+    import json
+    with open(MAP_PATH, "r") as file:
+        return json.load(file)
+
+
+def save_diffiulty_map(difficulty_map: list[dict]) -> None:
+    """
+    Dumps the entire table to a json file.\n
+    Rewrite the entire file each time.
+    """
+    import json
+    with open(MAP_PATH, "w") as file:
+        json.dump(difficulty_map, file)
 
 
 def get_island_amount_boundries(width: int, height: int) -> list[int, int]:
@@ -71,7 +68,11 @@ def get_island_amount_boundries(width: int, height: int) -> list[int, int]:
     return [min_count, max_count]
 
 
-def inspect_puzzle(grid: list[list[Node]]) -> PuzzleInformation:
+def inspect_puzzle(grid: list[list[Node]], by_rule_steps, brutal_steps_list) -> PuzzleInformation:
+    """
+    Inspects a grid and returns a PuzzleInformation object.\n
+    Used to determine core values of a puzzle to cathegorise it.
+    """
     grid_width: int = len(grid)
     grid_height: int = len(grid[0])
     island_amount: int = 0 # amount of islands
@@ -87,49 +88,51 @@ def inspect_puzzle(grid: list[list[Node]]) -> PuzzleInformation:
                     total_seven_count += 1
                 if grid[x][y].i_count == 8:
                     total_eight_count += 1
-    return PuzzleInformation(grid_width, grid_height, island_amount, total_island_count, total_seven_count, total_eight_count)
+    return PuzzleInformation(grid_width, grid_height, island_amount, total_island_count, total_seven_count, total_eight_count, by_rule_steps, brutal_steps_list)
 
 
-def get_difficulty_value(grid: list[list[Node]]) -> float:
+def get_difficulty_value(grid: list[list[Node]], by_rule_steps, brutal_steps_list) -> float:
     """
-    Gets a grid and returns a difficulty rating.\n
-    Rating is an float between 0 and 1.
+    Gets a grid, by_rule_steps and brutal_steps_list and returns a difficulty rating.\n
+    Rating is a normalised value, a float between 0 and 1.\n
+    Assumes that the difficulty map file exists.
     """
-    info: PuzzleInformation = inspect_puzzle(grid)
+    info: PuzzleInformation = inspect_puzzle(grid, by_rule_steps, brutal_steps_list)
+    difficulty_map = get_diffiulty_map()
 
     island_weigth = info.total_island_count / info.island_amount
-    island_weigth_calculated = island_weigth * ISLAND_WEIGHT_FACTOR
+    min_island_weight = difficulty_map["island_weight"][0]
+    max_island_weight = difficulty_map["island_weight"][1]
+    normalized_island_weight = (island_weigth - min_island_weight) / (max_island_weight - min_island_weight)
+    island_weight_difficulty = normalized_island_weight * ISLAND_WEIGHT_FACTOR
 
     island_amount_weight = info.island_amount / (info.grid_width + info.grid_height) / 2
-    island_amount_weight_calculated = island_amount_weight * ISLAND_AMOUNT_FACTOR
+    min_island_amount_weight = difficulty_map["island_amount_weight"][0]
+    max_island_amount_weight = difficulty_map["island_amount_weight"][1]
+    normalized_island_amount_weight = (island_amount_weight - min_island_amount_weight) / (max_island_amount_weight - min_island_amount_weight)
+    island_amount_weight_difficulty = normalized_island_amount_weight * ISLAND_AMOUNT_FACTOR
 
     below_seven_weight = info.island_amount - (info.total_seven_count + info.total_eight_count)
-    below_seven_weight_calculated = below_seven_weight * BELOW_SEVEN_FACTOR
+    min_below_seven_weight = difficulty_map["below_seven_weight"][0]
+    max_below_seven_weight = difficulty_map["below_seven_weight"][1]
+    normalized_below_seven_weight = (below_seven_weight - min_below_seven_weight) / (max_below_seven_weight - min_below_seven_weight)
+    below_seven_weight_difficulty = normalized_below_seven_weight * BELOW_SEVEN_FACTOR
 
-    difficulty = island_weigth_calculated + island_amount_weight_calculated + below_seven_weight_calculated
+    min_by_rule_steps = difficulty_map["by_rule_steps"][0]
+    max_by_rule_steps = difficulty_map["by_rule_steps"][1]
+    normalized_by_rule_steps = (by_rule_steps - min_by_rule_steps) / (max_by_rule_steps - min_by_rule_steps)
+    by_rule_steps_difficulty = normalized_by_rule_steps * BY_RULE_STEP_FACTOR
+
+    average_brutal_steps = sum(brutal_steps_list) / len(brutal_steps_list)
+    min_average_brutal_steps = difficulty_map["average_brutal_steps"][0]
+    max_average_brutal_steps = difficulty_map["average_brutal_steps"][1]
+    normalized_average_brutal_steps = (average_brutal_steps - min_average_brutal_steps) / (max_average_brutal_steps - min_average_brutal_steps)
+    average_brutal_steps_difficulty = normalized_average_brutal_steps * BRUTAL_STEP_FACTOR
+
+    difficulty =    island_weight_difficulty + \
+                    island_amount_weight_difficulty + \
+                    below_seven_weight_difficulty + \
+                    by_rule_steps_difficulty + \
+                    average_brutal_steps_difficulty
+
     return difficulty
-
-
-def get_difficulty(grid: list[list[Node]]) -> int:
-    """
-    Gets a grid and returns a difficulty rating.\n
-    Return value is an integer between 1 and 3.\n
-    1: Easy\n
-    2: Medium\n
-    3: Hard
-    """
-    difficulty = get_difficulty_value(grid)
-    difficulty_map = get_diffiulty_map()
-    for entry in difficulty_map:
-        if entry[0] == len(grid) and entry[1] == len(grid[0]):
-            min_difficulty = entry[2]
-            max_difficulty = entry[3]
-            easy_boundry = (max_difficulty - min_difficulty) / 3 + min_difficulty
-            intermediate_boundry = (max_difficulty - min_difficulty) / 3 * 2 + min_difficulty
-            if difficulty < easy_boundry:
-                return 1
-            elif difficulty < intermediate_boundry:
-                return 2
-            else:
-                return 3
-    raise ValueError("Geometry not found in difficulty map.")
