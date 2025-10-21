@@ -144,8 +144,8 @@ def bridge_out_info(x: int, y: int) -> dict[int, int]:
     """
     grid_w = len(_grid)
     grid_h = len(_grid[0])
-    assert _grid[x][y].n_type == 1
-    assert is_in_grid(x, y, grid_w, grid_h)
+    assert _grid[x][y].n_type == 1, f"In 'bridge_out_info', the node {x}, {y} is not an island, 'n_type' is {_grid[x][y].n_type}"
+    assert is_in_grid(x, y, grid_w, grid_h), f"In 'bridge_out_info', the node {x}, {y} is out of bounds of the grid"
     output = {}
     is_c_one = _grid[x][y].i_count == 1
     # first, calculate the input count
@@ -206,8 +206,8 @@ def establish_bridge(x: int, y: int, direction: int, thickness: int, log_moves: 
     Returns nothing.
     """
     global _grid
-    assert is_in_grid(x, y, len(_grid), len(_grid[0]))
-    assert _grid[x][y].n_type == 1
+    assert is_in_grid(x, y, len(_grid), len(_grid[0])), f"In 'establish_bridge', the node {x}, {y} is out of bounds of the grid"
+    assert _grid[x][y].n_type == 1, f"In 'establish_bridge', the node {x}, {y} is not an island, 'n_type' is {_grid[x][y].n_type}"
     # increase the current_in of both nodes by thickness
     # make the nodes in between bridges
     _grid[x][y].current_in += thickness
@@ -216,9 +216,9 @@ def establish_bridge(x: int, y: int, direction: int, thickness: int, log_moves: 
     check_y = y + dir_vector[1]
     while _grid[check_x][check_y].n_type != 1:
         if _grid[check_x][check_y].n_type == 2:
-            assert _grid[check_x][check_y].b_dir == direction % 2, f"Bridge direction is {direction % 2}, but should be {_grid[check_x][check_y].b_dir}"
-            assert _grid[check_x][check_y].b_thickness == 1
-            assert _grid[check_x][check_y].b_thickness + thickness == 2
+            assert _grid[check_x][check_y].b_dir == direction % 2, f"In 'establish_bridge', bridge direction is {direction % 2}, but should be {_grid[check_x][check_y].b_dir}"
+            assert _grid[check_x][check_y].b_thickness == 1, f"In 'establish_bridge', bridge thickness is {_grid[check_x][check_y].b_thickness}, but should be 1"
+            assert _grid[check_x][check_y].b_thickness + thickness == 2, f"In 'establish_bridge', bridge thickness + new bridge is {_grid[check_x][check_y].b_thickness}, but should be 2"
             _grid[check_x][check_y].b_thickness += thickness
         else:
             _grid[check_x][check_y].make_bridge(thickness, direction % 2)
@@ -228,6 +228,8 @@ def establish_bridge(x: int, y: int, direction: int, thickness: int, log_moves: 
     
     if log_moves:
         global _by_rule_move_log
+        print(f"Making move: ({x}, {y}) -> ({check_x}, {check_y}) with thickness {thickness}")
+        draw_grid(_grid)
         _by_rule_move_log.append((_grid[x][y], _grid[check_x][check_y], thickness))
     #print(f"Established bridge of thickness {thickness} in direction {direction} from ({x}, {y}) to ({check_x}, {check_y})")
 
@@ -313,16 +315,16 @@ def de_establish_bridge(x: int, y: int, direction: int, thickness: int) -> None:
     Returns nothing.
     """
     global _grid
-    assert is_in_grid(x, y, len(_grid), len(_grid[0]))
-    assert _grid[x][y].n_type == 1
+    assert is_in_grid(x, y, len(_grid), len(_grid[0])), f"In 'de_establish_bridge', the node {x}, {y} is out of bounds of the grid"
+    assert _grid[x][y].n_type == 1, f"In 'de_establish_bridge', the node {x}, {y} is not an island, 'n_type' is {_grid[x][y].n_type}"
     _grid[x][y].current_in -= thickness
     dir_vector = direction_to_vector(direction)
     check_x = x + dir_vector[0]
     check_y = y + dir_vector[1]
     while _grid[check_x][check_y].n_type != 1:
-        assert _grid[check_x][check_y].n_type == 2
+        assert _grid[check_x][check_y].n_type == 2, f"In 'de_establish_bridge', the node {check_x}, {check_y} is not a bridge, 'n_type' is {_grid[check_x][check_y].n_type}"
         assert _grid[check_x][check_y].b_dir == direction % 2, f"Bridge direction is {direction % 2}, but should be {_grid[check_x][check_y].b_dir}"
-        assert _grid[check_x][check_y].b_thickness >= thickness
+        assert _grid[check_x][check_y].b_thickness >= thickness, f"In 'de_establish_bridge', the bridge thickness is {_grid[check_x][check_y].b_thickness}, but should be at least {thickness}"
         if _grid[check_x][check_y].b_thickness == thickness:
             _grid[check_x][check_y].make_empty()
         else:
@@ -330,6 +332,8 @@ def de_establish_bridge(x: int, y: int, direction: int, thickness: int) -> None:
         check_x += dir_vector[0]
         check_y += dir_vector[1]
     _grid[check_x][check_y].current_in -= thickness
+    print(f"Taking back move: ({x}, {y}) -> ({check_x}, {check_y}) with thickness {thickness}")
+    draw_grid(_grid)
 
 
 def make_move(node_a: Node, node_b: Node, thickness: int) -> None:
@@ -344,6 +348,7 @@ def take_back_move() -> None:
     global _current_applied_moves, _step_count_brutal
     last_move = _current_applied_moves.pop()
     direction = nodes_to_direction(last_move[0], last_move[1])
+    print(f"Taking back move: {last_move[0].x}, {last_move[0].y} -> {last_move[1].x}, {last_move[1].y} with thickness {last_move[2]}")
     de_establish_bridge(last_move[0].x, last_move[0].y, direction, last_move[2])
     _step_count_brutal += 1
 
@@ -456,7 +461,34 @@ def copy_correct_solution() -> None:
 
 
 ### Main brute force function
+
 depth = 0
+def _solve_brutally_by_depth(max_depth: int) -> None:
+    """
+    """
+    global depth
+    if len(_correct_solutions) != 0:
+        return
+    depth += 1
+    print(f"Depth: {depth} with number of moves: {len(_current_moves)} with solution count: {len(_correct_solutions)}")
+    #draw_grid(_grid)
+    get_moves()
+    if is_solution_wrong():
+        depth -= 1
+        return
+    for move in _current_moves:
+        node_a = move[0]
+        node_b = move[1]
+        thickness = move[2]
+        make_move(node_a, node_b, thickness)
+        if depth < max_depth:
+            solve_brutally()
+        else:
+            solve_by_rules()
+        take_back_move()
+    depth -= 1
+
+
 def solve_brutally() -> None:
     """
     Do not use directly, use solve() instead.\n
@@ -499,7 +531,6 @@ def solve_brutally() -> None:
     """
     # Second method: try one & send back to solving by rules
     global _by_rule_move_log
-    #draw_grid(_grid)
     get_moves()
     if is_solution_wrong():
         return
@@ -507,8 +538,12 @@ def solve_brutally() -> None:
         node_a = move[0]
         node_b = move[1]
         thickness = move[2]
+        draw_grid(_grid)
         make_move(node_a, node_b, thickness)
         solve_by_rules(log_moves=True)
+        print("Moves made by solve_by_rules:")
+        for by_rule_move in _by_rule_move_log:
+            print(f"({by_rule_move[0].x}, {by_rule_move[0].y}) -> ({by_rule_move[1].x}, {by_rule_move[1].y}) with thickness {by_rule_move[2]}")
         if is_solution_correct():
             copy_correct_solution()
             break
@@ -516,6 +551,7 @@ def solve_brutally() -> None:
             for by_rule_move in _by_rule_move_log:
                 direction = nodes_to_direction(by_rule_move[0], by_rule_move[1])
                 de_establish_bridge(by_rule_move[0].x, by_rule_move[0].y, direction, by_rule_move[2])
+        _by_rule_move_log = []
         take_back_move()
 
 
