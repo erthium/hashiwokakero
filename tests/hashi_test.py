@@ -45,19 +45,24 @@ class Tester(TestCase):
         solution_grid = import_solution_grid(path)
         grid_w = len(empty_grid)
         grid_h = len(empty_grid[0])
-        solved_grid, _, _ = solve(empty_grid)
-        failed = False
-        for x in range(grid_w):
-            if failed: break
-            for y in range(grid_h):
-                if failed: break
-                if not compare_nodes(solution_grid[x][y], solved_grid[x][y]):
-                    #print(f"Error in {filename} at ({x}, {y})")
-                    failed = True
-                    #print_node_data(solution_grid[x][y])
-                    #print_node_data(solved_grid[x][y])
-                    #self.fail()
-        self.assertEqual(failed, False, f"Error in {filename}")
+        solutions = solve(empty_grid, stop_at_first=False)
+        self.assertGreater(len(solutions), 0, f"No solution found for {filename}")
+
+        # a puzzle may have multiple valid solutions; accept a match against any of them
+        matched = False
+        for solution in solutions:
+            solved_grid = solution.grid
+            all_match = True
+            for x in range(grid_w):
+                if not all_match: break
+                for y in range(grid_h):
+                    if not compare_nodes(solution_grid[x][y], solved_grid[x][y]):
+                        all_match = False
+                        break
+            if all_match:
+                matched = True
+                break
+        self.assertTrue(matched, f"No solution for {filename} matched the recorded solution grid")
 
 
     def test_solve_basic(self) -> None:

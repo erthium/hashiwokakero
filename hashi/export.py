@@ -1,6 +1,5 @@
 from node import Node, direction_to_vector, is_in_grid
 from arg_parser import parse_args
-import pygame
 import os
 
 def save_grid(grid: list[list[Node]], path: str = None) -> bool:
@@ -131,6 +130,7 @@ def output_image(grid: list[list[Node]], path: str, cell_unit: int = 200) -> boo
     Better to have cell_unit as an even number.\n
     Returns True if successful, False otherwise.
     """
+    import pygame
     from visualiser import grid_to_surface
     root_width = len(grid) * cell_unit
     root_height = len(grid[0]) * cell_unit
