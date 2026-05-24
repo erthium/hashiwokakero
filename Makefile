@@ -30,7 +30,7 @@ H := 15
 
 sure=0
 
-.PHONY: init freeze test clean showoff see produce map nuke_db
+.PHONY: init freeze test clean showoff see produce map nuke_db, alternative, only
 
 init:
 	pip install -r $(REQUIREMENTS_FILE)
@@ -69,3 +69,12 @@ map:
 
 nuke_db:
 	[ $(sure) -eq 1 ] && rm -f $(EASY_PUZZLES_DIR)/* $(INTERMEDIATE_PUZZLES_DIR)/* $(HARD_PUZZLES_DIR)/* $(UNORDERED_PUZZLES_DIR)/*
+
+
+alternative:
+	$(PY) $(FLAGS) hashi/alternative.py -e hashi/puzzles/puzzle_0.csv &
+	$(PY) $(FLAGS) hashi/visualiser.py -e hashi/puzzles/puzzle_0.csv &
+
+
+only:
+	$(PY) $(FLAGS) hashi/alternative.py -e hashi/puzzles/puzzle_0.csv

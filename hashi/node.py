@@ -42,5 +42,21 @@ def direction_to_vector(direction: int) -> tuple[int, int]:
     return [(-1, 0), (0, -1), (1, 0), (0, 1)][direction]
 
 
+def nodes_to_direction(node_a: Node, node_b: Node) -> int:
+    """
+    Returns direction from node_a to node_b
+    """
+    if node_a.x == node_b.x:
+        if node_a.y < node_b.y:
+            return 3
+        else:
+            return 1
+    else:
+        if node_a.x < node_b.x:
+            return 2
+        else:
+            return 0
+
+
 def is_in_grid(x: int, y: int, grid_w: int, grid_h: int) -> bool:
     return x >= 0 and x < grid_w and y >= 0 and y < grid_h

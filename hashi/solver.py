@@ -26,34 +26,41 @@ else -> puzzle is unsolvable
 """
 
 """ --TODO List--
-TODO: Add rules for islands with 1 or 2, where they cannot 
-consider sending all bridges to an identical island
 TODO: Create an algorithm for brute-force solving, to be used
 after solving with the base rules and remaining a situation
 which may contain multiple solutions
 """
 
-from time import sleep
-from node import Node, direction_to_vector, is_in_grid
+from dataclasses import dataclass
+
+from node import Node, direction_to_vector, nodes_to_direction, is_in_grid
 from visualiser import draw_grid, print_node_data
 from arg_parser import parse_args_empty
 from copy import deepcopy
 
+
 # global variables
+
 ## general
 _grid: list[list[Node]] = None
 _grid_w: int = None
 _grid_h: int = None
 _open_islands: list[Node] = None
-## tree search variables
+
+## brute force
 _group_count: int = None
 _groups: list[list[Node]] = None
-_moves: list[list[Node, Node, int]] = None # [Node, Node, thickness]
-_move_log: list[list[Node, Node, int]] = None # [Node, Node, thickness]
-_depth_indexes: list[int] = None
-## difficulty prediction variables
-_step_count: int = None
+_current_moves: list = None # list of (Node, Node, thickness) tuples
+_current_applied_moves: list = None # list of (Node, Node, thickness) tuples
+_correct_solutions: list = None # list of (grid, steps) tuples
+_by_rule_move_log: list = None # list of (Node, Node, thickness) tuples
 
+## difficulty prediction
+_step_count_rules: int = None
+_step_count_brutal: int = None
+
+
+## Preparation
 
 def collect_garbage(func):
     """
@@ -61,21 +68,74 @@ def collect_garbage(func):
     Only to be used in the main -public- solve function.
     """
     def wrapper(*args, **kwargs):
+        global _grid, _grid_w, _grid_h, _open_islands, _group_count, _groups, _current_moves, _current_applied_moves, _correct_solutions, _by_rule_move_log, _step_count_rules, _step_count_brutal
+        _open_islands = []
+        _current_moves = []
+        _current_applied_moves = []
+        _correct_solutions = []
+        _by_rule_move_log = []
+        _step_count_rules = 0
+        _step_count_brutal = 0
         result = func(*args, **kwargs)
-        global _grid, _grid_w, _grid_h, _open_islands, _group_count, _groups, _moves, _move_log, _depth_indexes, _step_count
         _grid = None
         _grid_w = None
         _grid_h = None
         _open_islands = None
         _group_count = None
         _groups = None
-        _moves = None
-        _move_log = None
-        _depth_indexes = None
-        _step_count = None
+        _current_moves = None
+        _current_applied_moves = None
+        _correct_solutions = None
+        _by_rule_move_log = None
+        _step_count_rules = None
+        _step_count_brutal = None
         return result
     return wrapper
 
+
+def copy_grid(grid: list[list[Node]]) -> list[list[Node]]:
+    """
+    Returns a deep copy of the given grid.
+    """
+    new_grid = []
+    for i in range(len(grid)):
+        new_grid.append([])
+        for j in range(len(grid[0])):
+            new_node = Node(grid[i][j].x, grid[i][j].y)
+            new_node.n_type = grid[i][j].n_type
+            new_node.i_count = grid[i][j].i_count
+            new_node.b_thickness = grid[i][j].b_thickness
+            new_node.b_dir = grid[i][j].b_dir
+            new_node.current_in = grid[i][j].current_in
+            new_grid[i].append(new_node)
+    return new_grid
+
+
+def compare_grids(grid_a: list[list[Node]], grid_b: list[list[Node]]) -> bool:
+    """
+    Compares two grids and returns True if they are the same, False otherwise.
+    """
+    for i in range(len(grid_a)):
+        for j in range(len(grid_a[0])):
+            if grid_a[i][j].n_type != grid_b[i][j].n_type:
+                return False
+            if grid_a[i][j].n_type == 1:
+                if grid_a[i][j].i_count != grid_b[i][j].i_count:
+                    return False
+            elif grid_a[i][j].n_type == 2:
+                if grid_a[i][j].b_thickness != grid_b[i][j].b_thickness or grid_a[i][j].b_dir != grid_b[i][j].b_dir:
+                    return False
+    return True
+
+
+@dataclass
+class Solution:
+    grid: list[list[Node]]
+    rule_steps: int
+    brutal_steps: int
+
+
+## Functions for solving by rules
 
 def bridge_out_info(x: int, y: int) -> dict[int, int]:
     """
@@ -84,10 +144,10 @@ def bridge_out_info(x: int, y: int) -> dict[int, int]:
     """
     grid_w = len(_grid)
     grid_h = len(_grid[0])
-    assert _grid[x][y].n_type == 1
-    assert is_in_grid(x, y, grid_w, grid_h)
+    assert _grid[x][y].n_type == 1, f"In 'bridge_out_info', the node {x}, {y} is not an island, 'n_type' is {_grid[x][y].n_type}"
+    assert is_in_grid(x, y, grid_w, grid_h), f"In 'bridge_out_info', the node {x}, {y} is out of bounds of the grid"
     output = {}
-    is_c_one = _grid[x][y].needed == 1
+    is_c_one = _grid[x][y].i_count == 1
     # first, calculate the input count
     for direction in [0, 1, 2, 3]:
         following_input_bridge = False
@@ -115,7 +175,13 @@ def bridge_out_info(x: int, y: int) -> dict[int, int]:
                             output[direction] = 1
                     else:
                         if hit_node.needed >= 1:
-                            output[direction] = 2 if hit_node.needed >= 2 else hit_node.needed
+                            if hit_node.needed >= 2:
+                                if _grid[x][y].needed >= 2:
+                                    output[direction] = 2
+                                else:
+                                    output[direction] = 1
+                            else:
+                                output[direction] = 1
                 found_target = True
             elif hit_node.n_type == 2:
                 if _grid[check_x][check_y].b_dir == direction % 2:
@@ -131,7 +197,7 @@ def bridge_out_info(x: int, y: int) -> dict[int, int]:
     return output
 
 
-def establish_bridge(x: int, y: int, direction: int, thickness: int) -> None:
+def establish_bridge(x: int, y: int, direction: int, thickness: int, log_moves: bool = False) -> None:
     """
     Takes an island node and builds a bridge in the given direction and thickness.\n
     Also increases the current_in of the target node by thickness.\n
@@ -140,8 +206,8 @@ def establish_bridge(x: int, y: int, direction: int, thickness: int) -> None:
     Returns nothing.
     """
     global _grid
-    assert _grid[x][y].n_type == 1
-    assert is_in_grid(x, y, len(_grid), len(_grid[0]))
+    assert is_in_grid(x, y, len(_grid), len(_grid[0])), f"In 'establish_bridge', the node {x}, {y} is out of bounds of the grid"
+    assert _grid[x][y].n_type == 1, f"In 'establish_bridge', the node {x}, {y} is not an island, 'n_type' is {_grid[x][y].n_type}"
     # increase the current_in of both nodes by thickness
     # make the nodes in between bridges
     _grid[x][y].current_in += thickness
@@ -150,19 +216,25 @@ def establish_bridge(x: int, y: int, direction: int, thickness: int) -> None:
     check_y = y + dir_vector[1]
     while _grid[check_x][check_y].n_type != 1:
         if _grid[check_x][check_y].n_type == 2:
-            assert _grid[check_x][check_y].b_dir == direction % 2, f"Bridge direction is {direction % 2}, but should be {_grid[check_x][check_y].b_dir}"
-            assert _grid[check_x][check_y].b_thickness == 1
-            assert _grid[check_x][check_y].b_thickness + thickness == 2
+            assert _grid[check_x][check_y].b_dir == direction % 2, f"In 'establish_bridge', bridge direction is {direction % 2}, but should be {_grid[check_x][check_y].b_dir}"
+            assert _grid[check_x][check_y].b_thickness == 1, f"In 'establish_bridge', bridge thickness is {_grid[check_x][check_y].b_thickness}, but should be 1"
+            assert _grid[check_x][check_y].b_thickness + thickness == 2, f"In 'establish_bridge', bridge thickness + new bridge is {_grid[check_x][check_y].b_thickness}, but should be 2"
             _grid[check_x][check_y].b_thickness += thickness
         else:
             _grid[check_x][check_y].make_bridge(thickness, direction % 2)
         check_x += dir_vector[0]
         check_y += dir_vector[1]
     _grid[check_x][check_y].current_in += thickness
+    
+    if log_moves:
+        global _by_rule_move_log
+        print(f"Making move: ({x}, {y}) -> ({check_x}, {check_y}) with thickness {thickness}")
+        draw_grid(_grid)
+        _by_rule_move_log.append((_grid[x][y], _grid[check_x][check_y], thickness))
     #print(f"Established bridge of thickness {thickness} in direction {direction} from ({x}, {y}) to ({check_x}, {check_y})")
 
 
-def solve_by_rules() -> None:
+def solve_by_rules(log_moves: bool = False) -> None:
     """
     Do not use directly, use solve() instead.\n
     Apply essential principles to the grid.\n
@@ -170,13 +242,13 @@ def solve_by_rules() -> None:
     If no open islands are left, the puzzle is solved.\n
     Returns nothing.
     """
-    global _grid, _open_islands, _step_count
+    global _grid, _open_islands, _step_count_rules
     # get all open islands
     any_operation_done: bool = True
     while any_operation_done: # if no operation was done, puzzle is unsolvable
         any_operation_done = False
         for i in range(len(_open_islands) - 1, -1, -1): # check every open island each cycle
-            _step_count += 1
+            _step_count_rules += 1
             island  = _open_islands[i]
             #print_node_data(island)
             #draw_grid(_grid)
@@ -198,14 +270,14 @@ def solve_by_rules() -> None:
             ## if needed == max_out, build all bridges
             if island.needed == max_out:
                 for direction, thickness in direction_info.items():
-                    establish_bridge(island.x, island.y, direction, thickness)
+                    establish_bridge(island.x, island.y, direction, thickness, log_moves)
                 _open_islands.remove(island)
                 any_operation_done = True
 
             ## if only one direction is possible, build bridge
             elif dir == 1:
                 for direction, thickness in direction_info.items():
-                    establish_bridge(island.x, island.y, direction, thickness)
+                    establish_bridge(island.x, island.y, direction, thickness, log_moves)
                     _open_islands.remove(island)
                     any_operation_done = True
 
@@ -213,7 +285,7 @@ def solve_by_rules() -> None:
             elif island.needed // 2 == dir - 1:
                 if island.needed % 2 == 1:
                     for direction, thickness in direction_info.items():
-                        establish_bridge(island.x, island.y, direction, 1)
+                        establish_bridge(island.x, island.y, direction, 1, log_moves)
                         any_operation_done = True
                 else:
                     there_is_cause = False
@@ -225,17 +297,65 @@ def solve_by_rules() -> None:
                     if there_is_cause:
                         for direction, thickness in direction_info.items():
                             if thickness != 1:
-                                establish_bridge(island.x, island.y, direction, 1)
+                                establish_bridge(island.x, island.y, direction, 1, log_moves)
                                 any_operation_done = True
 
 
+## Functions for solving by brute force
+
+### Functions for moves
+
+
+def de_establish_bridge(x: int, y: int, direction: int, thickness: int) -> None:
+    """
+    Takes an island node and removes a bridge in the given direction and thickness.\n
+    Also decreases the current_in of the target node by thickness.\n
+    Assumes the bridge is possible, and the node is an island.\n
+    Works if there is already a single bridge in the direction.\n
+    Returns nothing.
+    """
+    global _grid
+    assert is_in_grid(x, y, len(_grid), len(_grid[0])), f"In 'de_establish_bridge', the node {x}, {y} is out of bounds of the grid"
+    assert _grid[x][y].n_type == 1, f"In 'de_establish_bridge', the node {x}, {y} is not an island, 'n_type' is {_grid[x][y].n_type}"
+    _grid[x][y].current_in -= thickness
+    dir_vector = direction_to_vector(direction)
+    check_x = x + dir_vector[0]
+    check_y = y + dir_vector[1]
+    while _grid[check_x][check_y].n_type != 1:
+        assert _grid[check_x][check_y].n_type == 2, f"In 'de_establish_bridge', the node {check_x}, {check_y} is not a bridge, 'n_type' is {_grid[check_x][check_y].n_type}"
+        assert _grid[check_x][check_y].b_dir == direction % 2, f"Bridge direction is {direction % 2}, but should be {_grid[check_x][check_y].b_dir}"
+        assert _grid[check_x][check_y].b_thickness >= thickness, f"In 'de_establish_bridge', the bridge thickness is {_grid[check_x][check_y].b_thickness}, but should be at least {thickness}"
+        if _grid[check_x][check_y].b_thickness == thickness:
+            _grid[check_x][check_y].make_empty()
+        else:
+            _grid[check_x][check_y].b_thickness -= thickness
+        check_x += dir_vector[0]
+        check_y += dir_vector[1]
+    _grid[check_x][check_y].current_in -= thickness
+    print(f"Taking back move: ({x}, {y}) -> ({check_x}, {check_y}) with thickness {thickness}")
+    draw_grid(_grid)
+
+
+def make_move(node_a: Node, node_b: Node, thickness: int) -> None:
+    global _current_applied_moves, _step_count_brutal
+    direction = nodes_to_direction(node_a, node_b)
+    establish_bridge(node_a.x, node_a.y, direction, thickness)
+    _current_applied_moves.append((node_a, node_b, thickness))
+    _step_count_brutal += 1
+
+
+def take_back_move() -> None:
+    global _current_applied_moves, _step_count_brutal
+    last_move = _current_applied_moves.pop()
+    direction = nodes_to_direction(last_move[0], last_move[1])
+    print(f"Taking back move: {last_move[0].x}, {last_move[0].y} -> {last_move[1].x}, {last_move[1].y} with thickness {last_move[2]}")
+    de_establish_bridge(last_move[0].x, last_move[0].y, direction, last_move[2])
+    _step_count_brutal += 1
+
+
 def get_moves() -> None:
-    """
-    Do not use directly, use solve() instead.\n
-    TODO: Could be optimized by creating a new function like bridge_out_info, but returning hit Nodes directly.\n 
-    """
-    global _moves
-    _moves = []
+    global _current_moves
+    _current_moves = []
     for island in _open_islands:
         for direction, thickness in bridge_out_info(island.x, island.y).items():
             dir_vector = direction_to_vector(direction)
@@ -244,51 +364,38 @@ def get_moves() -> None:
             while _grid[check_x][check_y].n_type != 1:
                 check_x += dir_vector[0]
                 check_y += dir_vector[1]
-            # check if move is already in moves
-            already_in_moves = False
-            for move in _moves:
-                if move[1].x == island.x and move[1].y == island.y and move[0].x == check_x and move[0].y == check_y: 
-                    already_in_moves = True
+
+            # if node_a and node_b reversed is already in moves, skip
+            already_found = False
+            for move in _current_moves:
+                node_a = move[0]
+                node_b = move[1]
+                if island.x == node_b.x and island.y == node_b.y and check_x == node_a.x and check_y == node_a.y:
+                    already_found = True
                     break
-            if not already_in_moves:
-                _moves.append([island, _grid[check_x][check_y], thickness])
+            if already_found:
+                continue
+
+            if thickness == 2:
+                _current_moves.append((_grid[island.x][island.y], _grid[check_x][check_y], 1))
+                _current_moves.append((_grid[island.x][island.y], _grid[check_x][check_y], 2))
+            else:
+                _current_moves.append((_grid[island.x][island.y], _grid[check_x][check_y], thickness))
+
+    for move in _current_moves:
+        node_a = move[0]
+        node_b = move[1]
+        thickness = move[2]
 
 
-def take_back_move() -> None:
-    print("Taking back move")
-    # pop the last move from move log
-    # de-establish the bridge according to the move
-    global _move_log, _depth_indexes
-    move = _move_log.pop()
-    _depth_indexes.pop()
-    direction = -1
-    if move[0].x == move[1].x: direction = 0 if move[0].y < move[1].y else 2
-    else: direction = 1 if move[0].x < move[1].x else 3
-    dir_vector = direction_to_vector(direction)
-    check_x = move[0].x + dir_vector[0]
-    check_y = move[0].y + dir_vector[1]
-    is_following_bridge = _grid[check_x][check_y].b_thickness != move[2]
-    while _grid[check_x][check_y].n_type != 1:
-        if is_following_bridge: 
-            _grid[check_x][check_y].b_thickness -= 1
-        else:
-            _grid[check_x][check_y].make_empty()
-        check_x += dir_vector[0]
-        check_y += dir_vector[1]
-    move[0].current_in -= move[2]
-    move[0].current_in -= move[2]
-    # for debug purposes
-    assert _grid[check_x][check_y].n_type == 1
-    assert _grid[check_x][check_y].x == move[1].x and _grid[check_x][check_y].y == move[1].y, f"({check_x}, {check_y}) != ({move[1].x}, {move[1].y})"
-    get_moves()
+### Functions for checking correctness
 
-
-def get_groups() -> None:
+def _get_groups() -> None:
     """
     Searches through the entire grid and sets the list of open islands in each connected island group.\n
     Also sets the '_group_count: int' global variable.\n
     _groups Format: [ [N, N, N], [N, N], [N, N, N, N, N], ...]\n
-    If there is a group with no open islands, the solution is wrong.\n
+    If there is a group with no open islands while _group_count is not 1, the solution is wrong.\n
     If the list is empty and _group_count is 1, the puzzle is solved.
     """
     global _grid, _group_count, _groups
@@ -322,81 +429,179 @@ def get_groups() -> None:
                                     stack.append((check_x, check_y))
 
 
-def is_unsolvable() -> bool:
+def is_solution_wrong() -> bool:
     """
-    Calculates the island groups and checks if any of them have no open islands.\n
-    Returns True if the puzzle is unsolvable, False otherwise.
+    Checks if the solution is wrong by checking the groups.\n
+    Returns True if the solution is wrong, False otherwise.
     """
-    get_groups()
-    for group in _groups:
-        if len(group) == 0:
-            return True
+    global _group_count, _groups
+    _get_groups()
+    if _group_count != 1:
+        for group in _groups:
+            if len(group) == 0:
+                return True
     return False
-    
+
+
+def is_solution_correct() -> bool:
+    """
+    Checks if the solution is correct by checking the groups.\n
+    Returns True if the solution is correct, False otherwise.
+    """
+    global _group_count, _groups
+    _get_groups()
+    if _group_count == 1 and len(_groups[0]) == 0:
+        return True
+    return False
+
+
+def copy_correct_solution() -> None:
+    global _grid, _correct_solutions, _step_count_brutal
+    _correct_solutions.append((copy_grid(_grid), _step_count_brutal))
+
+
+### Main brute force function
+
+depth = 0
+def _solve_brutally_by_depth(max_depth: int) -> None:
+    """
+    """
+    global depth
+    if len(_correct_solutions) != 0:
+        return
+    depth += 1
+    print(f"Depth: {depth} with number of moves: {len(_current_moves)} with solution count: {len(_correct_solutions)}")
+    #draw_grid(_grid)
+    get_moves()
+    if is_solution_wrong():
+        depth -= 1
+        return
+    for move in _current_moves:
+        node_a = move[0]
+        node_b = move[1]
+        thickness = move[2]
+        make_move(node_a, node_b, thickness)
+        if depth < max_depth:
+            solve_brutally()
+        else:
+            solve_by_rules()
+        take_back_move()
+    depth -= 1
+
 
 def solve_brutally() -> None:
     """
     Do not use directly, use solve() instead.\n
-    """
-    global _grid, _open_islands, _move_log, _depth_indexes
-    depth = -1
-    get_moves()
-    while len(_moves) > 0:
-        depth += 1
-        if len(_depth_indexes) <= depth:
-            _depth_indexes.append(0)
-        else: 
-            _depth_indexes[depth] += 1
-        if _depth_indexes[depth] >= len(_moves):
-            take_back_move()
-            depth -= 1
-            continue
-        move = _moves[_depth_indexes[depth]]
-        _move_log.append(move)
-        direction = -1
-        if move[0].x == move[1].x: direction = 3 if move[0].y < move[1].y else 1
-        else: direction = 2 if move[0].x < move[1].x else 0
-        establish_bridge(move[0].x, move[0].y, direction, move[2])
-        if is_unsolvable():
-            take_back_move()
-            depth -= 1
-            continue
-        if len(_open_islands) == 0:
-            return
-        else: 
-            take_back_move()
+    The main brute force algorithm.\n
+    Checks all possible moves, tries them, and if the solution is correct, stops.\n
+    Returns nothing.
 
+    |-- Main Flow --|
+
+    - Get all moves
+    - For all the moves
+        - Make the move
+        - Check if the solution is correct
+            - If correct, copy the grid to solutions
+        - Recursively call the function
+        - Take the move back
+    """
+    """ First method: Try all f** moves
+    global depth
+    if len(_correct_solutions) != 0:
+        return
+    depth += 1
+    print(f"Depth: {depth} with number of moves: {len(_current_moves)} with solution count: {len(_correct_solutions)}")
+    #draw_grid(_grid)
+    get_moves()
+    if is_solution_wrong():
+        depth -= 1
+        return
+    for move in _current_moves:
+        node_a = move[0]
+        node_b = move[1]
+        thickness = move[2]
+        make_move(node_a, node_b, thickness)
+        if is_solution_correct():
+            copy_correct_solution()
+        else:
+            solve_brutally()
+        take_back_move()
+    depth -= 1
+    """
+    # Second method: try one & send back to solving by rules
+    global _by_rule_move_log
+    get_moves()
+    if is_solution_wrong():
+        return
+    for move in _current_moves:
+        node_a = move[0]
+        node_b = move[1]
+        thickness = move[2]
+        draw_grid(_grid)
+        make_move(node_a, node_b, thickness)
+        solve_by_rules(log_moves=True)
+        print("Moves made by solve_by_rules:")
+        for by_rule_move in _by_rule_move_log:
+            print(f"({by_rule_move[0].x}, {by_rule_move[0].y}) -> ({by_rule_move[1].x}, {by_rule_move[1].y}) with thickness {by_rule_move[2]}")
+        if is_solution_correct():
+            copy_correct_solution()
+            break
+        else:
+            for by_rule_move in _by_rule_move_log:
+                direction = nodes_to_direction(by_rule_move[0], by_rule_move[1])
+                de_establish_bridge(by_rule_move[0].x, by_rule_move[0].y, direction, by_rule_move[2])
+        _by_rule_move_log = []
+        take_back_move()
+
+
+## Main solve function
 
 @collect_garbage
-def solve(grid: list[list[Node]]) -> tuple[list[list[Node]], int]:
+def solve(grid: list[list[Node]]) -> list[Solution]:
     """
     Solve the given grid by trying rules and brute forcing when it is stuck.\n
-    Return the tuple of solved grid and step count for difficulty prediction.
+    Returns a list of Solution objects.\n
+    If the grid is unsolvable, god help us all.
     """
-    global _grid, _grid_h, _grid_w, _open_islands, _move_log, _depth_indexes, _step_count
+    # Prepare to solve
+    global _grid, _grid_h, _grid_w, _open_islands, _step_count_rules, _step_count_brutal, _correct_solutions
     _grid = grid
     _grid_w = len(grid)
     _grid_h = len(grid[0])
-    _open_islands = []
-    _move_log = []
-    _depth_indexes = []
-    _step_count = 0
     for i in range(len(_grid)):
         for j in range(len(_grid[0])):
             if _grid[i][j].n_type == 1:
                 _open_islands.append(_grid[i][j])
+    # Solve by rules, if not completed, solve by brute force
     solve_by_rules()
-    #if len(_open_islands) != 0: solve_brutally()
-    return deepcopy(grid), _step_count
+    if len(_open_islands) == 0:
+        print("Solved by rules")
+        only_solution = Solution(grid=copy_grid(_grid), rule_steps=_step_count_rules, brutal_steps=0)
+        return [only_solution]
+    else:
+        print("Solving by brute force")
+        grid_before = copy_grid(_grid)
+        solve_brutally()
+        grid_after = copy_grid(_grid)
+
+        if len(_correct_solutions) == 0:
+            print("Somehow brute force did not work")
+            is_the_same = compare_grids(grid_before, grid_after)
+            print(f"Grids are the same: {is_the_same}")
+
+        solutions = []
+        for solution in _correct_solutions:
+            solutions.append(Solution(grid=solution[0], rule_steps=_step_count_rules, brutal_steps=solution[1]))
+        return solutions
 
 
 def main():
     import sys
     grid_to_solve: list[list[Node]] = parse_args_empty(sys.argv)
-    solved, steps = solve(grid_to_solve)
-    print(f"Solved in {steps} steps")
-    draw_grid(solved)
-    #solution_grid = import_solution_grid(path)
+    all_solutions = solve(grid_to_solve)
+    print(f"Number of solutions: {len(all_solutions)}")
+    draw_grid(all_solutions[0].grid)
 
 
 if __name__ == "__main__":

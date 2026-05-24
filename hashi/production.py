@@ -13,7 +13,7 @@ from node import Node
 from generator import generate_till_full
 from export import save_grid
 from solver import solve
-from cathegorise import determine_difficulty
+from cathegorise import get_difficulty_value
 from arg_parser import parse_to_geometry_n_amount
 from copy import deepcopy
 
@@ -102,7 +102,7 @@ def produce(width:int, height:int, amount: int, cathegorise: bool = True) -> Non
         grid = generate_till_full(width, height)
         solved_grid, rules_steps, brutal_steps = solve(deepcopy(grid))
         #if not is_completed(solved_grid): continue # if the grid is not solvable, don't save it
-        difficulty = determine_difficulty(solved_grid, rules_steps)
+        difficulty = get_difficulty_value(solved_grid)
         if cathegorise:
             save_according_to_difficulty(grid, difficulty)
         else:
