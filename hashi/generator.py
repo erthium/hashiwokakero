@@ -48,10 +48,9 @@ Max Puzzle: A puzzle which cannot be extended anymore, which has no node that co
 potentially have another bridge in an empty direction.
 """
 
-from node import Node, direction_to_vector, is_in_grid
 from random import randint, choice
-from export import save_grid
-from arg_parser import parse_to_path
+
+from hashi.core import Node, direction_to_vector, is_in_grid
 
 
 def get_random_direction(grid: list[list[Node]], x: int, y: int) -> int:
@@ -192,24 +191,3 @@ def show_grid(grid: list[list[Node]]):
         print('\n')
 
 
-def main():
-    import argparse, os
-    from visualiser import draw_grid
-    # parse args for width and height and output path
-    parser = argparse.ArgumentParser(description="Generates a Hashi puzzle")
-    parser.add_argument("width", type=int, help="Width of the puzzle")
-    parser.add_argument("height", type=int, help="Height of the puzzle")
-    parser.add_argument("path", type=str, help="Path to save the puzzle")
-    args = parser.parse_args()
-    width = args.width
-    height = args.height
-    path = args.path
-    assert width > 0 and height > 0
-    assert os.path.splitext(path)[1] == '.csv'
-    grid = generate_till_full(width, height)
-    draw_grid(grid)
-    save_grid(grid, path)
-        
-
-if __name__ == "__main__":
-    main()

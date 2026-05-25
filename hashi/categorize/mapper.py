@@ -20,15 +20,15 @@ import queue as _queue
 import random
 import time
 
-from node import Node
-from generator import generate_till_full
-from cathegorise import (
+from hashi.core import Node
+from hashi.generator import generate_till_full
+from hashi.categorize import (
     METRIC_KEYS,
     inspect_puzzle,
     compute_metrics,
-    save_diffiulty_map,
+    save_difficulty_map,
 )
-from solver import solve
+from hashi.solver import solve
 
 
 ITERATION_COUNT: int = 1000
@@ -323,7 +323,7 @@ def iterate_all_geometries(amount: int) -> dict[str, dict[str, list[float]]]:
         geom_start = time.time()
         observations = gather_geometry_metrics(width, height, amount, label=key)
         difficulty_map[key] = geometry_ranges(observations)
-        save_diffiulty_map(difficulty_map)
+        save_difficulty_map(difficulty_map)
         elapsed = time.time() - geom_start
         # Overwrite the progress line with the final summary for this geometry.
         print(f"\r\033[K  {key} done in {elapsed:.1f}s. Ranges: " + ", ".join(

@@ -1,121 +1,113 @@
 """
-Mass production script for generating puzzles.
+Mass production of hashi puzzles.
 
-Steps:
-1. Generate a full grid
-2. Solve it and determine the difficulty
-3. Save it according to the difficulty
+For each requested puzzle:
+    1. Generate a full grid (generate_till_full)
+    2. Strip the construction bridges so the solver sees an empty board
+    3. Solve and obtain rule_steps / brutal_steps
+    4. Score with the categoriser
+    5. Save under easy / intermediate / hard / unordered
 
-Usage: python3 production.py <width> <height> <amount>
+The easy/intermediate/hard bucket thresholds are still ad-hoc (0.3 / 0.6) —
+that decision is tracked in docs/backlog.md (Difficulty bucketing). They will
+be revisited once we have a corpus of scored puzzles.
 """
 
-from node import Node
-from generator import generate_till_full
-from export import save_grid
-from solver import solve
-from cathegorise import get_difficulty_value
-from arg_parser import parse_to_geometry_n_amount
-from copy import deepcopy
+from __future__ import annotations
 
-# DIRECTORIES
 import os
-""" --STRUCTURE--
-project/
-    hashi/
-        production.py
-        ...
-    database/
-        easy/
-        intermediate/
-        hard/
-        undordered/
-"""
-DATABASE_DIR: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '../database'))
-EASY_DIR: str = os.path.join(DATABASE_DIR, "easy")
-INTERMEDIATE_DIR: str = os.path.join(DATABASE_DIR, "intermediate")
-HARD_DIR: str = os.path.join(DATABASE_DIR, "hard")
-UNORDERED_DIR: str = os.path.join(DATABASE_DIR, "unordered")
-assert os.path.isdir(DATABASE_DIR)
-assert os.path.isdir(EASY_DIR)
-assert os.path.isdir(INTERMEDIATE_DIR)
-assert os.path.isdir(HARD_DIR)
-assert os.path.isdir(UNORDERED_DIR)
-easy_puzzle_count: int = len(os.listdir(EASY_DIR))
-intermediate_puzzle_count: int = len(os.listdir(INTERMEDIATE_DIR))
-hard_puzzle_count: int = len(os.listdir(HARD_DIR))
+
+from hashi.core import Node
+from hashi.generator import generate_till_full
+from hashi.formats import save_grid
+from hashi.solver import solve
+from hashi.categorize import get_difficulty_value
 
 
-def is_completed(grid: list[list[Node]]) -> bool:
+# Ad-hoc bucket thresholds. See docs/backlog.md → "Difficulty bucketing".
+EASY_THRESHOLD: float = 0.3
+INTERMEDIATE_THRESHOLD: float = 0.6
+
+
+def _strip_bridges(grid: list[list[Node]]) -> None:
     """
-    Checks if the grid is completed.
+    Removes construction bridges and resets island current_in. Required because
+    generate_till_full leaves bridges in place, but solve() expects an empty board.
     """
     for row in grid:
         for node in row:
-            if node.needed != 0:
-                return False
-    return True
+            if node.n_type == 2:
+                node.make_empty()
+            elif node.n_type == 1:
+                node.current_in = 0
 
 
-def save_according_to_difficulty(grid: list[list[Node]], difficulty: int) -> None:
+def _bucket_dir(output_dir: str, difficulty: float, categorize: bool) -> str:
     """
-    Saves the grid according to its difficulty.
+    Resolves the subdirectory a freshly-produced puzzle should be written to.
     """
-    directory = None
-    if difficulty < 0.3: directory = EASY_DIR
-    elif difficulty < 0.6: directory = INTERMEDIATE_DIR
-    else: directory = HARD_DIR
-    index = 0
-    difficulty_str = f"{difficulty:.5f}"
-    puzzle_path = os.path.join(directory, f"puzzle_{difficulty_str}.csv")
-    while os.path.isfile(puzzle_path):
-        difficulty_str = f"{difficulty:.5f}_{index}"
-        puzzle_path = os.path.join(directory, f"puzzle_{difficulty_str}.csv")
-        index += 1
-    assert puzzle_path is not None
-    save_grid(grid, puzzle_path)
+    if not categorize:
+        return os.path.join(output_dir, "unordered")
+    if difficulty < EASY_THRESHOLD:
+        return os.path.join(output_dir, "easy")
+    if difficulty < INTERMEDIATE_THRESHOLD:
+        return os.path.join(output_dir, "intermediate")
+    return os.path.join(output_dir, "hard")
 
 
-def save_unordered(grid: list[list[Node]], step_count: int) -> None:
+def _unique_csv_path(directory: str, stem: str) -> str:
     """
-    Saves the grid to the unordered directory.
+    Returns a path 'directory/stem.csv' (or '<stem>_<n>.csv' if stem already taken).
     """
-    index = 0
-    step_str = f"{step_count}_{index}"
-    puzzle_path = os.path.join(UNORDERED_DIR, f"{step_str}.csv")
-    while os.path.isfile(puzzle_path):
-        index += 1
-        step_str = f"{step_count}_{index}"
-        puzzle_path = os.path.join(UNORDERED_DIR, f"{step_str}.csv")
-    save_grid(grid, puzzle_path)
+    os.makedirs(directory, exist_ok=True)
+    path = os.path.join(directory, f"{stem}.csv")
+    if not os.path.isfile(path):
+        return path
+    n = 0
+    while True:
+        path = os.path.join(directory, f"{stem}_{n}.csv")
+        if not os.path.isfile(path):
+            return path
+        n += 1
 
 
-def produce(width:int, height:int, amount: int, cathegorise: bool = True) -> None:
+def produce(
+    width: int,
+    height: int,
+    amount: int,
+    output_dir: str,
+    categorize: bool = True,
+) -> None:
     """
-    Steps:
-    1. Generate a full grid
-    2. Solve it and determine the difficulty
-    3. Save it according to the difficulty
-    """
+    Produces `amount` puzzles at (width, height) and writes them under output_dir.
 
-    while amount > 0:
-        print(f"Generating {amount} puzzles...")
+    output_dir layout when categorize=True:
+        output_dir/easy/         puzzles with score < EASY_THRESHOLD
+        output_dir/intermediate/ EASY_THRESHOLD <= score < INTERMEDIATE_THRESHOLD
+        output_dir/hard/         score >= INTERMEDIATE_THRESHOLD
+    When categorize=False:
+        output_dir/unordered/    all puzzles, filename keyed on rule_steps
+    """
+    for i in range(amount):
         grid = generate_till_full(width, height)
-        solved_grid, rules_steps, brutal_steps = solve(deepcopy(grid))
-        #if not is_completed(solved_grid): continue # if the grid is not solvable, don't save it
-        difficulty = get_difficulty_value(solved_grid)
-        if cathegorise:
-            save_according_to_difficulty(grid, difficulty)
+        _strip_bridges(grid)
+        solutions = solve(grid, stop_at_first=True)
+        if not solutions:
+            print(f"  [{i + 1}/{amount}] unsolvable — skipping")
+            continue
+        solution = solutions[0]
+        difficulty = get_difficulty_value(
+            grid, solution.rule_steps, solution.brutal_steps
+        )
+
+        target_dir = _bucket_dir(output_dir, difficulty, categorize)
+        if categorize:
+            stem = f"puzzle_{difficulty:.5f}"
         else:
-            save_unordered(grid, rules_steps)
-        amount -= 1
-
-
-def main() -> None:
-    import sys
-    args = parse_to_geometry_n_amount(sys.argv) # width - height - amount
-    if args == -1: return
-    produce(*args, cathegorise=True)
-
-
-if __name__ == "__main__":
-    main()
+            stem = f"puzzle_{solution.rule_steps}"
+        path = _unique_csv_path(target_dir, stem)
+        save_grid(solution.grid, path)
+        print(
+            f"  [{i + 1}/{amount}] rule={solution.rule_steps} "
+            f"brutal={solution.brutal_steps} score={difficulty:.3f} -> {path}"
+        )

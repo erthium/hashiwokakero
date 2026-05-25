@@ -1,6 +1,19 @@
-from node import Node, direction_to_vector, is_in_grid
-from arg_parser import parse_args
+"""
+CSV serialisation for hashi grids.
+
+File format: a single line with four ;;-separated fields:
+    width ;; height ;; empty_grid ;; solution_grid
+
+`empty_grid` and `solution_grid` are flat strings of cell codes:
+    0           empty cell
+    1..8        island with that count
+    -1, -2      horizontal bridge, thickness 1 or 2
+    -3, -4      vertical   bridge, thickness 1 or 2
+"""
+
 import os
+
+from hashi.core import Node
 
 def save_grid(grid: list[list[Node]], path: str = None) -> bool:
     """
@@ -120,40 +133,3 @@ def import_empty_grid(path: str) -> list[list[Node]]:
     return grid
 
 
-def output_image(grid: list[list[Node]], path: str, cell_unit: int = 200) -> bool:
-    """
-    Takes grid, cell size of every node in pixels and path 
-    for output; and outputs an image of the grid.\n
-    Total image pixel width or height cannot be larger than 20_000.\n
-    Supports BMP, TGA, PNG and JPEG format.\n
-    Higher cell size leads to better resolution in output image.\n
-    Better to have cell_unit as an even number.\n
-    Returns True if successful, False otherwise.
-    """
-    import pygame
-    from visualiser import grid_to_surface
-    root_width = len(grid) * cell_unit
-    root_height = len(grid[0]) * cell_unit
-    if root_width > 20_000 or root_height > 20_000:
-        print("ERROR: Image size cannot be larger than 20_000 pixels.")
-        return False
-    root = pygame.Surface((root_width , root_height))
-    try:
-        grid_to_surface(root, grid, cell_unit)
-        pygame.image.save(root, path)
-    except Exception as e:
-        print(f"ERROR: {e}")
-        return False
-    return True
-
-
-def main():
-    import sys
-    grid = parse_args(sys.argv)
-    if grid == -1:
-        return
-    output_image(grid, "images/test.png", 300)
-
-
-if __name__ == "__main__":
-    main()
