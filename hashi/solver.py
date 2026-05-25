@@ -61,6 +61,9 @@ _step_count_brutal: int = None           # counts forward moves only; take-backs
 ## search behaviour
 _stop_at_first: bool = None              # set per-call via solve(stop_at_first=...)
 
+## progress reporting
+_progress_callback = None                # callable(rule_steps, brutal_steps) or None
+
 
 def collect_garbage(func):
     """
@@ -70,7 +73,7 @@ def collect_garbage(func):
         global _grid, _grid_w, _grid_h, _open_islands
         global _group_count, _groups
         global _current_moves, _current_applied_moves, _correct_solutions, _by_rule_move_log
-        global _step_count_rules, _step_count_brutal, _stop_at_first
+        global _step_count_rules, _step_count_brutal, _stop_at_first, _progress_callback
         _open_islands = []
         _current_moves = []
         _current_applied_moves = []
@@ -79,6 +82,7 @@ def collect_garbage(func):
         _step_count_rules = 0
         _step_count_brutal = 0
         _stop_at_first = True
+        _progress_callback = None
         try:
             return func(*args, **kwargs)
         finally:
@@ -95,6 +99,7 @@ def collect_garbage(func):
             _step_count_rules = None
             _step_count_brutal = None
             _stop_at_first = None
+            _progress_callback = None
     return wrapper
 
 
@@ -244,6 +249,8 @@ def solve_by_rules(log_moves: bool = False) -> None:
         any_operation_done = False
         for i in range(len(_open_islands) - 1, -1, -1):
             _step_count_rules += 1
+            if _progress_callback is not None and (_step_count_rules & 1023) == 0:
+                _progress_callback(_step_count_rules, _step_count_brutal)
             island = _open_islands[i]
             # if island is already closed, skip
             # occurs when an island send a bridge to this one, and not closed it
@@ -480,6 +487,9 @@ def solve_brutally() -> None:
         if _stop_at_first and _correct_solutions:
             return
 
+        if _progress_callback is not None and (_step_count_brutal & 31) == 0:
+            _progress_callback(_step_count_rules, _step_count_brutal)
+
         node_a, node_b, thickness = move
 
         saved_open_islands = list(_open_islands)
@@ -505,19 +515,29 @@ def solve_brutally() -> None:
 ## Main solve function
 
 @collect_garbage
-def solve(grid: list[list[Node]], stop_at_first: bool = True) -> list[Solution]:
+def solve(
+    grid: list[list[Node]],
+    stop_at_first: bool = True,
+    progress_callback=None,
+) -> list[Solution]:
     """
     Solve the given grid by applying rules and falling back to rules-first brute force search.\n
     Returns a list of Solution objects (empty if no solution found).\n
     \n
     stop_at_first=True (default): return as soon as one solution is found.\n
-    stop_at_first=False: enumerate every solution the search can reach.
+    stop_at_first=False: enumerate every solution the search can reach.\n
+    \n
+    progress_callback: optional callable(rule_steps, brutal_steps) that fires every\n
+    ~1024 rule steps and every ~32 brutal steps. Used by long-running batch jobs to\n
+    surface forward progress on adversarial puzzles. Default None (no overhead).
     """
-    global _grid, _grid_h, _grid_w, _open_islands, _step_count_rules, _stop_at_first
+    global _grid, _grid_h, _grid_w, _open_islands, _step_count_rules
+    global _stop_at_first, _progress_callback
     _grid = grid
     _grid_w = len(grid)
     _grid_h = len(grid[0])
     _stop_at_first = stop_at_first
+    _progress_callback = progress_callback
     for i in range(_grid_w):
         for j in range(_grid_h):
             if _grid[i][j].n_type == 1:

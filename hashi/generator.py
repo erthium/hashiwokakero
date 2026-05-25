@@ -50,7 +50,6 @@ potentially have another bridge in an empty direction.
 
 from node import Node, direction_to_vector, is_in_grid
 from random import randint, choice
-from visualiser import draw_grid
 from export import save_grid
 from arg_parser import parse_to_path
 
@@ -195,6 +194,7 @@ def show_grid(grid: list[list[Node]]):
 
 def main():
     import argparse, os
+    from visualiser import draw_grid
     # parse args for width and height and output path
     parser = argparse.ArgumentParser(description="Generates a Hashi puzzle")
     parser.add_argument("width", type=int, help="Width of the puzzle")
