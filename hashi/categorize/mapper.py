@@ -27,6 +27,7 @@ from hashi.categorize import (
     inspect_puzzle,
     compute_metrics,
     save_difficulty_map,
+    score_from_metrics,
 )
 from hashi.solver import solve
 
@@ -308,6 +309,36 @@ def geometry_ranges(observations: dict[str, list[float]]) -> dict[str, list[floa
     return ranges
 
 
+def _build_geometry_entry(observations: dict[str, list[float]]) -> dict:
+    """
+    Computes the full per-geometry calibration entry:
+      - per-metric [lo, hi] 5th/95th percentile ranges
+      - easy_threshold and intermediate_threshold at the 33rd and 66th
+        percentiles of the score distribution
+
+    Scores are computed inline against the just-computed ranges, so the same
+    sample drives both the score normalisation and the bucket cutoffs.
+    """
+    entry: dict = dict(geometry_ranges(observations))
+
+    sample_count = len(next(iter(observations.values()), []))
+    if sample_count == 0:
+        # Degenerate case — no successful observations. Fall back to the
+        # ad-hoc thresholds; the consumer can decide whether to retry or skip.
+        entry["easy_threshold"] = 0.3
+        entry["intermediate_threshold"] = 0.6
+        return entry
+
+    scores: list[float] = []
+    for i in range(sample_count):
+        metrics = {key: observations[key][i] for key in METRIC_KEYS}
+        scores.append(score_from_metrics(metrics, entry))
+    scores.sort()
+    entry["easy_threshold"] = _percentile(scores, 33.3333)
+    entry["intermediate_threshold"] = _percentile(scores, 66.6666)
+    return entry
+
+
 def iterate_all_geometries(amount: int) -> dict[str, dict[str, list[float]]]:
     """
     Walks the locked geometry list, gathers samples, computes percentile ranges,
@@ -322,14 +353,22 @@ def iterate_all_geometries(amount: int) -> dict[str, dict[str, list[float]]]:
         key = f"{width}x{height}"
         geom_start = time.time()
         observations = gather_geometry_metrics(width, height, amount, label=key)
-        difficulty_map[key] = geometry_ranges(observations)
+        entry = _build_geometry_entry(observations)
+        difficulty_map[key] = entry
         save_difficulty_map(difficulty_map)
         elapsed = time.time() - geom_start
         # Overwrite the progress line with the final summary for this geometry.
-        print(f"\r\033[K  {key} done in {elapsed:.1f}s. Ranges: " + ", ".join(
-            f"{m}={difficulty_map[key][m][0]:.3f}..{difficulty_map[key][m][1]:.3f}"
-            for m in METRIC_KEYS
-        ), flush=True)
+        print(
+            f"\r\033[K  {key} done in {elapsed:.1f}s. "
+            f"buckets: easy<{entry['easy_threshold']:.3f} "
+            f"intermediate<{entry['intermediate_threshold']:.3f}. "
+            "Ranges: "
+            + ", ".join(
+                f"{m}={entry[m][0]:.3f}..{entry[m][1]:.3f}"
+                for m in METRIC_KEYS
+            ),
+            flush=True,
+        )
 
     print(f"All geometries mapped in {time.time() - total_start:.1f}s.", flush=True)
     return difficulty_map

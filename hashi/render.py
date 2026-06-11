@@ -29,23 +29,17 @@ X_NUMBERS_ON_TOP = True  # Set to True to show x-axis numbers on top
 Y_NUMBERS_ON_RIGHT = False  # Set to True to show y-axis numbers on right
 
 
-def draw_grid(grid: list[list[Node]]) -> plt.Figure:
+def draw_grid_on_axis(grid: list[list[Node]], ax: plt.Axes, island_font_size: float = ISLAND_FONT_SIZE) -> None:
   """
-  Draws the grid using matplotlib.
+  Draws the grid on a caller-provided matplotlib axis. Used by `draw_grid`
+  for standalone rendering and by `hashi.book` for multi-puzzle PDF pages.
   """
-  # Get the grid size
   grid_width = len(grid)
   grid_height = len(grid[0])
-  # Create a figure and axis
-  fig, ax = plt.subplots(figsize=(grid_width + 2, grid_height + 2))  # Add margin to the figure size
-  # Set the aspect ratio to be equal
   ax.set_aspect('equal')
-  # Set the x and y limits with a margin of 1 cell
   ax.set_xlim(-1, grid_width)
   ax.set_ylim(-1, grid_height)
-  # Invert the y-axis to make the top-left the (0, 0) corner
   ax.invert_yaxis()
-  # Set the ticks and labels
   ax.set_xticks(range(grid_width))
   ax.set_yticks(range(grid_height))
   if SHOW_X_NUMBERS:
@@ -59,7 +53,6 @@ def draw_grid(grid: list[list[Node]]) -> plt.Figure:
     ax.set_yticklabels("")
     ax.tick_params(axis='y', which='both', length=0)
 
-  # Set the position of the grid numbers
   if X_NUMBERS_ON_TOP:
     ax.xaxis.tick_top()
   else:
@@ -68,10 +61,8 @@ def draw_grid(grid: list[list[Node]]) -> plt.Figure:
     ax.yaxis.tick_right()
   else:
     ax.yaxis.tick_left()
-  # Set the grid (drawn below everything else)
   ax.grid(True, color=GRID_LINE_COLOR, linewidth=GRID_LINE_WIDTH, zorder=0)
 
-  # Separate nodes into empty cells, bridges, and islands
   empty_cells = []
   bridges = []
   islands = []
@@ -85,49 +76,51 @@ def draw_grid(grid: list[list[Node]]) -> plt.Figure:
       else:
         empty_cells.append((i, j))
 
-  # Draw empty cells
   for i, j in empty_cells:
     ax.add_patch(plt.Rectangle((i - ISLAND_RADIUS, j - ISLAND_RADIUS), 2 * ISLAND_RADIUS, 2 * ISLAND_RADIUS, color=EMPTY_CELL_COLOR, zorder=1))
 
-  # Draw bridges
   visited = set()
   for i, j, node in bridges:
     if (i, j) in visited:
       continue
     visited.add((i, j))
     thickness = node.b_thickness if hasattr(node, 'b_thickness') else 1
-    if node.b_dir == 0:  # Horizontal bridge
+    if node.b_dir == 0:
       end_i = i
       while end_i + 1 < grid_width and grid[end_i + 1][j].n_type == 2 and grid[end_i + 1][j].b_dir == 0:
         end_i += 1
         visited.add((end_i, j))
       if thickness == 2:
-        # Double bridge: draw two parallel rectangles above and below center
         ax.add_patch(plt.Rectangle((i - 0.5 - ISLAND_RADIUS, j - BRIDGE_WIDTH_DOUBLE_OFFSET / 2), end_i - i + 1 + 2 * ISLAND_RADIUS, BRIDGE_WIDTH_SINGLE, color=BRIDGE_COLOR, zorder=2))
         ax.add_patch(plt.Rectangle((i - 0.5 - ISLAND_RADIUS, j + BRIDGE_WIDTH_DOUBLE_OFFSET / 2 - BRIDGE_WIDTH_SINGLE), end_i - i + 1 + 2 * ISLAND_RADIUS, BRIDGE_WIDTH_SINGLE, color=BRIDGE_COLOR, zorder=2))
       else:
-        # Single bridge: draw one rectangle centered
         ax.add_patch(plt.Rectangle((i - 0.5 - ISLAND_RADIUS, j - BRIDGE_WIDTH_SINGLE / 2), end_i - i + 1 + 2 * ISLAND_RADIUS, BRIDGE_WIDTH_SINGLE, color=BRIDGE_COLOR, zorder=2))
-    elif node.b_dir == 1:  # Vertical bridge
+    elif node.b_dir == 1:
       end_j = j
       while end_j + 1 < grid_height and grid[i][end_j + 1].n_type == 2 and grid[i][end_j + 1].b_dir == 1:
         end_j += 1
         visited.add((i, end_j))
       if thickness == 2:
-        # Double bridge: draw two parallel rectangles left and right of center
         ax.add_patch(plt.Rectangle((i - BRIDGE_WIDTH_DOUBLE_OFFSET / 2, j - 0.5 - ISLAND_RADIUS), BRIDGE_WIDTH_SINGLE, end_j - j + 1 + 2 * ISLAND_RADIUS, color=BRIDGE_COLOR, zorder=2))
         ax.add_patch(plt.Rectangle((i + BRIDGE_WIDTH_DOUBLE_OFFSET / 2 - BRIDGE_WIDTH_SINGLE, j - 0.5 - ISLAND_RADIUS), BRIDGE_WIDTH_SINGLE, end_j - j + 1 + 2 * ISLAND_RADIUS, color=BRIDGE_COLOR, zorder=2))
       else:
-        # Single bridge: draw one rectangle centered
         ax.add_patch(plt.Rectangle((i - BRIDGE_WIDTH_SINGLE / 2, j - 0.5 - ISLAND_RADIUS), BRIDGE_WIDTH_SINGLE, end_j - j + 1 + 2 * ISLAND_RADIUS, color=BRIDGE_COLOR, zorder=2))
 
-  # Draw islands
   for i, j, node in islands:
     ax.add_patch(plt.Circle((i, j), ISLAND_RADIUS, color=(1, 1, 1, 1), zorder=3))
     ax.add_patch(plt.Circle((i, j), ISLAND_RADIUS, color=ISLAND_COLOR, zorder=3, fill=False, linewidth=4))
-    ax.text(i, j, str(node.i_count), fontsize=ISLAND_FONT_SIZE, ha='center', va='center', color=ISLAND_TEXT_COLOR, zorder=4)
+    ax.text(i, j, str(node.i_count), fontsize=island_font_size, ha='center', va='center', color=ISLAND_TEXT_COLOR, zorder=4)
 
-  # Return the figure object
+
+def draw_grid(grid: list[list[Node]]) -> plt.Figure:
+  """
+  Draws a grid as its own standalone figure. Use draw_grid_on_axis when
+  composing multiple puzzles on one figure (book pages).
+  """
+  grid_width = len(grid)
+  grid_height = len(grid[0])
+  fig, ax = plt.subplots(figsize=(grid_width + 2, grid_height + 2))
+  draw_grid_on_axis(grid, ax)
   return fig
 
 

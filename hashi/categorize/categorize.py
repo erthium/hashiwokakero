@@ -61,6 +61,22 @@ METRIC_KEYS = (
     "brutal_steps",
 )
 
+# Per-metric weight for the linear difficulty score. The order does not matter;
+# we look up by metric name when summing.
+FACTOR_WEIGHTS: dict[str, float] = {
+    "island_weight":        ISLAND_WEIGHT_FACTOR,
+    "island_amount_weight": ISLAND_AMOUNT_FACTOR,
+    "below_seven_weight":   BELOW_SEVEN_FACTOR,
+    "by_rule_steps":        BY_RULE_STEP_FACTOR,
+    "brutal_steps":         BRUTAL_STEP_FACTOR,
+}
+
+# Fallback bucket thresholds, used when difficulty_map.json was generated before
+# Phase 4 (no per-geometry easy/intermediate cutoffs). Pre-Phase-4 maps still
+# work — they just get the old ad-hoc cutoffs.
+_DEFAULT_EASY_THRESHOLD: float = 0.3
+_DEFAULT_INTERMEDIATE_THRESHOLD: float = 0.6
+
 
 @dataclass
 class PuzzleInformation:
@@ -172,6 +188,34 @@ def _nearest_geometry_key(difficulty_map: dict, width: int, height: int) -> str:
     return best_key
 
 
+def score_from_metrics(metrics: dict[str, float], geom_entry: dict) -> float:
+    """
+    Pure scoring function — given a single observation's raw metric values and
+    a geometry's entry from the difficulty map (with per-metric [lo, hi]),
+    returns the normalised difficulty score in [0, 1].
+
+    Used by both get_difficulty_value (loads the map from disk) and by the
+    mapper itself (operates on observations in memory before any map is written).
+    """
+    score = 0.0
+    for metric in METRIC_KEYS:
+        lo, hi = geom_entry[metric]
+        normalised = _normalise(metrics[metric], lo, hi)
+        score += normalised * FACTOR_WEIGHTS[metric]
+    return score
+
+
+def _resolve_geometry(difficulty_map: dict, width: int, height: int) -> dict:
+    """
+    Returns the entry from difficulty_map for the given geometry, falling back
+    to the nearest available geometry by L1 distance if the exact key is absent.
+    """
+    key = f"{width}x{height}"
+    if key not in difficulty_map:
+        key = _nearest_geometry_key(difficulty_map, width, height)
+    return difficulty_map[key]
+
+
 def get_difficulty_value(grid: list[list[Node]], by_rule_steps: int, brutal_steps: int) -> float:
     """
     Returns a normalised difficulty score in [0, 1] for the given solved-puzzle data.
@@ -181,24 +225,28 @@ def get_difficulty_value(grid: list[list[Node]], by_rule_steps: int, brutal_step
     """
     info = inspect_puzzle(grid, by_rule_steps, brutal_steps)
     metrics = compute_metrics(info)
-    difficulty_map = get_difficulty_map()
+    geom = _resolve_geometry(get_difficulty_map(), info.grid_width, info.grid_height)
+    return score_from_metrics(metrics, geom)
 
-    key = f"{info.grid_width}x{info.grid_height}"
-    if key not in difficulty_map:
-        key = _nearest_geometry_key(difficulty_map, info.grid_width, info.grid_height)
-    geom_ranges = difficulty_map[key]
 
-    weights = {
-        "island_weight":        ISLAND_WEIGHT_FACTOR,
-        "island_amount_weight": ISLAND_AMOUNT_FACTOR,
-        "below_seven_weight":   BELOW_SEVEN_FACTOR,
-        "by_rule_steps":        BY_RULE_STEP_FACTOR,
-        "brutal_steps":         BRUTAL_STEP_FACTOR,
-    }
+def bucket(
+    grid: list[list[Node]], by_rule_steps: int, brutal_steps: int
+) -> str:
+    """
+    Returns 'easy', 'intermediate', or 'hard' for the given puzzle using the
+    per-geometry quantile thresholds stored in difficulty_map.json.
 
-    difficulty = 0.0
-    for metric in METRIC_KEYS:
-        lo, hi = geom_ranges[metric]
-        normalised = _normalise(metrics[metric], lo, hi)
-        difficulty += normalised * weights[metric]
-    return difficulty
+    If the map predates Phase 4 (no per-geometry thresholds) the call falls back
+    to the ad-hoc 0.3 / 0.6 split used before quantile calibration was added.
+    """
+    info = inspect_puzzle(grid, by_rule_steps, brutal_steps)
+    metrics = compute_metrics(info)
+    geom = _resolve_geometry(get_difficulty_map(), info.grid_width, info.grid_height)
+    score = score_from_metrics(metrics, geom)
+    easy_th = geom.get("easy_threshold", _DEFAULT_EASY_THRESHOLD)
+    intermediate_th = geom.get("intermediate_threshold", _DEFAULT_INTERMEDIATE_THRESHOLD)
+    if score < easy_th:
+        return "easy"
+    if score < intermediate_th:
+        return "intermediate"
+    return "hard"
