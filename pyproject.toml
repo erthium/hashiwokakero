@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hashi"
+version = "0.1.0"
+description = "Hashiwokakero (Bridges) generator, solver, and difficulty categoriser."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "erthium" }]
+dependencies = [
+    "matplotlib>=3.5",
+]
+
+[project.scripts]
+hashi = "hashi.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["hashi", "hashi.*"]
+
+[tool.setuptools.package-data]
+"hashi.data" = ["*.json", "*.ttf"]

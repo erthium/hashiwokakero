@@ -20,14 +20,15 @@ is intentionally not handled here — see docs/backlog.md.
 
 
 from dataclasses import dataclass
+from importlib.resources import files
 import json
-import os
 
-from node import Node
+from hashi.core import Node
 
 
-SCRIPT_DIR: str = os.path.dirname(__file__)
-MAP_PATH: str = os.path.join(SCRIPT_DIR, "difficulty_map.json")
+# Packaged calibration data lives under hashi/data/. Resolved at import time so
+# every consumer sees the same path regardless of cwd.
+MAP_PATH = str(files("hashi.data") / "difficulty_map.json")
 
 
 # Factor weights. Must sum to 1.0.
@@ -73,7 +74,7 @@ class PuzzleInformation:
     brutal_steps: int
 
 
-def get_diffiulty_map() -> dict:
+def get_difficulty_map() -> dict:
     """
     Loads the difficulty map from disk.
 
@@ -83,7 +84,7 @@ def get_diffiulty_map() -> dict:
         return json.load(file)
 
 
-def save_diffiulty_map(difficulty_map: dict) -> None:
+def save_difficulty_map(difficulty_map: dict) -> None:
     """
     Persists the difficulty map. Overwrites the entire file.
     """
@@ -180,7 +181,7 @@ def get_difficulty_value(grid: list[list[Node]], by_rule_steps: int, brutal_step
     """
     info = inspect_puzzle(grid, by_rule_steps, brutal_steps)
     metrics = compute_metrics(info)
-    difficulty_map = get_diffiulty_map()
+    difficulty_map = get_difficulty_map()
 
     key = f"{info.grid_width}x{info.grid_height}"
     if key not in difficulty_map:

@@ -1,80 +1,23 @@
-PY := python3
-FLAGS := -b
-SRC_DIR := hashi
-TESTS_DIR := tests
-PUZZLES_DIR := $(SRC_DIR)/puzzles
+.PHONY: install test map produce clean
 
-SHOW_PUZZLE = $(PUZZLES_DIR)/puzzle_3.csv
-MANUAL_TEST_PUZZLE := $(PUZZLES_DIR)/puzzle_2.csv
+# Defaults for `make produce`
+W ?= 15
+H ?= 15
+P ?= 10
+OUTPUT_DIR ?= output/database
 
-REQUIREMENTS_FILE := requirements.txt
-
-GENERATOR_SCRIPT := $(SRC_DIR)/generator.py
-SOLVER_SCRIPT := $(SRC_DIR)/solver.py
-VISUALISER_SCRIPT := $(SRC_DIR)/visualiser.py
-PRODUCTION_SCRIPT := $(SRC_DIR)/production.py
-MAPPER_SCRIPT := $(SRC_DIR)/difficulty_mapper.py
-
-TEST_SCRIPT := $(TESTS_DIR)/hashi_test.py
-
-
-DATABASE_DIR := database
-EASY_PUZZLES_DIR := $(DATABASE_DIR)/easy
-INTERMEDIATE_PUZZLES_DIR := $(DATABASE_DIR)/intermediate
-HARD_PUZZLES_DIR := $(DATABASE_DIR)/hard
-UNORDERED_PUZZLES_DIR := $(DATABASE_DIR)/unordered
-
-P := 10
-W := 15
-H := 15
-
-sure=0
-
-.PHONY: init freeze test clean showoff see produce map nuke_db, alternative, only
-
-init:
-	pip install -r $(REQUIREMENTS_FILE)
-
-
-freeze:
-	pip freeze > $(REQUIREMENTS_FILE)
-
+install:
+	pip install -e .
 
 test:
-	$(PY) $(FLAGS) $(TEST_SCRIPT)
-
-
-clean:
-	rm -rf $(SRC_DIR)/__pycache__ $(TESTS_DIR)/__pycache__
-
-
-showoff:
-	$(PY) $(FLAGS) $(VISUALISER_SCRIPT) -e $(SHOW_PUZZLE) &
-	$(PY) $(FLAGS) $(VISUALISER_SCRIPT) -s $(SHOW_PUZZLE) &
-	$(PY) $(FLAGS) $(SOLVER_SCRIPT) $(SHOW_PUZZLE) &
-
-
-see:
-	$(PY) $(FLAGS) $(VISUALISER_SCRIPT) -s $(MANUAL_TEST_PUZZLE) &
-	$(PY) $(FLAGS) $(SOLVER_SCRIPT) $(MANUAL_TEST_PUZZLE) &
-
-
-produce:
-	$(PY) $(FLAGS) $(PRODUCTION_SCRIPT) $(W) $(H) $(P) 
-
+	cd tests && python -m unittest discover -p 'test_*.py' -v
 
 map:
-	$(PY) $(FLAGS) $(MAPPER_SCRIPT)
+	hashi calibrate
 
+produce:
+	hashi produce $(W) $(H) $(P) -d $(OUTPUT_DIR)
 
-nuke_db:
-	[ $(sure) -eq 1 ] && rm -f $(EASY_PUZZLES_DIR)/* $(INTERMEDIATE_PUZZLES_DIR)/* $(HARD_PUZZLES_DIR)/* $(UNORDERED_PUZZLES_DIR)/*
-
-
-alternative:
-	$(PY) $(FLAGS) hashi/alternative.py -e hashi/puzzles/puzzle_0.csv &
-	$(PY) $(FLAGS) hashi/visualiser.py -e hashi/puzzles/puzzle_0.csv &
-
-
-only:
-	$(PY) $(FLAGS) hashi/alternative.py -e hashi/puzzles/puzzle_0.csv
+clean:
+	find . -name '__pycache__' -type d -exec rm -rf {} +
+	find . -name '*.egg-info' -type d -exec rm -rf {} +

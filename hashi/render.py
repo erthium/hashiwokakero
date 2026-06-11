@@ -5,8 +5,7 @@ The quality needs to be improved since this output will be printed on a book.
 
 import matplotlib.pyplot as plt
 
-from node import Node
-from export import import_empty_grid, import_solution_grid
+from hashi.core import Node
 
 
 # Define constant color values with alpha channel
@@ -155,29 +154,3 @@ def clear_grid(fig: plt.Figure):
   fig.clf()  # Clear the figure
 
 
-def main():
-  import argparse
-  parser = argparse.ArgumentParser(description="Draw a hashi puzzle grid using matplotlib.")
-  # args are: first -e or -s, empty or solution, then the file path
-  parser.add_argument('file_path', type=str, help="Path to the hashi puzzle file.")
-  parser.add_argument('-e', '--empty', action='store_true', help="Draw an empty grid.")
-  parser.add_argument('-s', '--solution', action='store_true', help="Draw a solution grid.")
-  args = parser.parse_args()
-  # Load the grid from the file
-  try:
-    if args.empty:
-      grid = import_empty_grid(args.file_path)
-    elif args.solution:
-      grid = import_solution_grid(args.file_path)
-    else:
-      raise ValueError("You must specify either -e for empty grid or -s for solution grid.")
-  except Exception as e:
-    print(f"Error loading grid from {args.file_path}: {e}")
-    return
-
-  fig = draw_grid(grid)
-  show_grid(fig)
-
-
-if __name__ == "__main__":
-  main()

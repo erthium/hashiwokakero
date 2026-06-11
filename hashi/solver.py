@@ -34,8 +34,7 @@ Brute-force layer (only if rules are not enough):
 
 from dataclasses import dataclass
 
-from node import Node, direction_to_vector, nodes_to_direction, is_in_grid
-from arg_parser import parse_args_empty
+from hashi.core import Node, direction_to_vector, nodes_to_direction, is_in_grid
 
 
 # Module globals
@@ -554,17 +553,3 @@ def solve(
     ]
 
 
-def main():
-    import sys
-    from visualiser import draw_grid
-    grid_to_solve: list[list[Node]] = parse_args_empty(sys.argv)
-    all_solutions = solve(grid_to_solve)
-    print(f"Number of solutions: {len(all_solutions)}")
-    if len(all_solutions) == 0:
-        print("No solution found.")
-        return
-    draw_grid(all_solutions[0].grid)
-
-
-if __name__ == "__main__":
-    main()
