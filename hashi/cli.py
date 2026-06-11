@@ -7,6 +7,7 @@ Subcommands:
     score     compute a normalised difficulty score
     render     render a puzzle (display or save to PNG)
     produce    mass-generate scored puzzles into bucketed directories
+    book       assemble a printable PDF from a directory of produced puzzles
     calibrate  regenerate hashi/data/difficulty_map.json from scratch
 """
 
@@ -166,6 +167,37 @@ def _cmd_produce(args: argparse.Namespace) -> int:
     return 0
 
 
+def _add_book(sub: argparse._SubParsersAction) -> None:
+    p = sub.add_parser(
+        "book", help="assemble a printable PDF from a directory of produced puzzles"
+    )
+    p.add_argument(
+        "input_dir",
+        help="directory containing easy/, intermediate/, hard/ subdirs of CSVs",
+    )
+    p.add_argument(
+        "-o",
+        "--output",
+        required=True,
+        help="path to write the PDF",
+    )
+    p.set_defaults(func=_cmd_book)
+
+
+def _cmd_book(args: argparse.Namespace) -> int:
+    from hashi.book import assemble_book
+
+    if not os.path.isdir(args.input_dir):
+        print(f"ERROR: {args.input_dir} is not a directory", file=sys.stderr)
+        return 2
+    try:
+        assemble_book(args.input_dir, args.output)
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 def _add_calibrate(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser(
         "calibrate", help="regenerate hashi/data/difficulty_map.json from scratch"
@@ -214,6 +246,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_score(sub)
     _add_render(sub)
     _add_produce(sub)
+    _add_book(sub)
     _add_calibrate(sub)
     return parser
 
