@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hashi"
-version = "0.1.0"
+version = "1.0.0"
 description = "Hashiwokakero (Bridges) generator, solver, and difficulty categoriser."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -13,6 +13,12 @@ authors = [{ name = "erthium" }]
 dependencies = [
     "matplotlib>=3.5",
 ]
+keywords = ["hashi", "hashiwokakero", "puzzle", "solver", "generator"]
+
+[project.urls]
+Homepage = "https://github.com/erthium/hashiwokakero"
+Repository = "https://github.com/erthium/hashiwokakero.git"
+Issues = "https://github.com/erthium/hashiwokakero/issues"
 
 [project.scripts]
 hashi = "hashi.cli:main"
